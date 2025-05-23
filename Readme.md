@@ -1,6 +1,11 @@
 # TS - Automatisation Instagram & Telegram pour Termux
 
-./logo.sh)
+"████████╗███████╗"
+"╚══██╔══╝██╔════╝"
+"   ██║   ███████╗"
+"   ██║        ██║"
+"   ██║   ███████║"
+"   ╚═╝   ╚══════╝"
 
 ## Présentation
 
