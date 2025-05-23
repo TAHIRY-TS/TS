@@ -12,11 +12,10 @@ import string
 from datetime import datetime, timezone
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SCRIPT_DIR = os.path.join(PROJECT_DIR, 'scripts')
-CONFIG_DIR = os.path.join(SCRIPT_DIR, 'config')
-SESSION_DIR = CONFIG_DIR
-LOG_FILE = os.path.join(SCRIPT_DIR, 'history.log')
-LOGO_PATH = os.path.join(PROJECT_DIR, 'assets/logo.sh')
+CONFIG_DIR = os.path.join(PROJECT_DIR, 'config')
+SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
+LOG_FILE = os.path.join(PROJECT_DIR, 'logs', 'history.log')
+LOGO_PATH = os.path.join(PROJECT_DIR, 'logo.sh')
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
