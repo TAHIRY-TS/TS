@@ -1,6 +1,6 @@
 # TS - Automatisation Instagram & Telegram pour Termux
 
-![Logo TS](https://raw.githubusercontent.com/TAHIRY-TS/TS/main/logo.sh)
+./logo.sh)
 
 ## Présentation
 
