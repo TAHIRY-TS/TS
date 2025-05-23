@@ -1,12 +1,11 @@
 # TS - Automatisation Instagram & Telegram pour Termux
-
+```bash
 "████████╗███████╗"
 "╚══██╔══╝██╔════╝"
 "   ██║   ███████╗"
 "   ██║        ██║"
 "   ██║   ███████║"
 "   ╚═╝   ╚══════╝"
-
 ## Présentation
 
 **TS** est un script professionnel pour **Termux**, développé pour automatiser les tâches Instagram (Follow, Like) récupérées via Telegram grâce au bot `@SmmKingdomTasksBot`. Il inclut des fonctionnalités de connexion Telegram, d’automatisation d’actions Instagram, d’historique de commandes, et de notifications sécurisées.
