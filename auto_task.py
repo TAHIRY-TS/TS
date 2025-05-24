@@ -242,3 +242,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print(horloge() + " Arrêt...")
+        os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
+
