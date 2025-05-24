@@ -281,7 +281,7 @@ def menu():
         print("1. Ajouter un compte")
         print("2. Lister les comptes")
         print("3. Supprimer un compte")
-        print("4. Quitter")
+        print("0. Quitter")
         choix = safe_input("\nChoix: ")
 
         if choix == '1':
@@ -291,8 +291,8 @@ def menu():
             safe_input("\nAppuyez sur Entrée...")
         elif choix == '3':
             supprimer_compte()
-        elif choix == '4':
-            break
+        elif choix == '0':
+            subprocess.call(['start.sh']) 
         else:
             erreur("Choix invalide.")
             safe_input("\nAppuyez sur Entrée...")
