@@ -227,7 +227,10 @@ def creer_config():
 def lister_comptes():
     clear()
     time.sleep(2)
-    fichiers = sorted([f for f in os.listdir(CONFIG_DIR) if f.endswith('.json') and '_session' not in f])
+    fichiers = sorted([
+        f for f in os.listdir(CONFIG_DIR)
+        if f.endswith('.json') and '_session' not in f and f not in ['config.json', 'selected_user.json']
+    ])
     titre_section("COMPTES ENREGISTRÉS")
 
     if not fichiers:
