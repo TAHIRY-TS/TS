@@ -218,7 +218,7 @@ async def handler(event):
             await asyncio.sleep(3)
             return
 
-        if "profile's username for tasks" in message.lower() or "choose account from the list" in message.lower():
+        if "profile's username for tasks" in message.lower() or "choose account from the list" in message.lower() or "Current status of this account is Limited." in message.lower(): 
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
