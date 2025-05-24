@@ -31,6 +31,9 @@ CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
 
+def color(text, code):
+    return f"\033[{code}m{text}\033[0m"
+
 # ---------- Connexion Telegram ----------
 def se_connecter(api_id, api_hash, phone):
     with TelegramClient(StringSession(), api_id, api_hash) as client:
