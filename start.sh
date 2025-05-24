@@ -67,10 +67,10 @@ afficher_cadre() {
     echo -e "${MAGENTA}╔$(printf '═%.0s' $(seq 1 $((largeur - 2))))╗${RESET}"
 
     printf "%*s" "$espace_gauche" ""
-    printf "${MAGENTA}║"
+    printf "${MAGENTA}║${RESET}"
     printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$titre"
     printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
-    echo -e "║${RESET}"
+    echo -e "${MAGENTA}║${RESET}"
 
     printf "%*s" "$espace_gauche" ""
     echo -e "${MAGENTA}╠$(printf '═%.0s' $(seq 1 $((largeur - 2))))╣${RESET}"
@@ -79,7 +79,7 @@ afficher_cadre() {
 # === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
-    printf "%*s" "$espace_gauche" ""; echo -e "║ ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${JAUNE}3.${RESET} Lancer une tâche manuellement                    ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${VERT}4.${RESET} Mise à jour                                      ║"
