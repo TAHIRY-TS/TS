@@ -13,8 +13,8 @@ BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 CONFIG_DIR = os.path.join(BASE, 'config')
 IMAGE_DIR = os.path.join(BASE, 'images')
 SESSION_DIR = os.path.join(BASE, 'sessions')
-SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
-REPORT_PATH = os.path.join(BASE, 'rapport.txt')
+SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
+REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 
 os.makedirs(SESSION_DIR, exist_ok=True)
 
