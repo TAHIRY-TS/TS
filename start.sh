@@ -51,8 +51,11 @@ afficher_version() {
     local largeur=55
     local texte="TS SMM AUTOCLICK - $VERSION"
     local longueur=${#texte}
-    local espace_gauche=$(( ( $(tput cols) - longueur ) / 2 ))
-    printf "%*s${CYAN}%s${RESET}\n" "$espace_gauche" "$texte"
+    printf "%*s" "$espace_gauche" ""
+    printf "${MAGENTA}║${RESET}"
+    printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$texte"
+    printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
+    echo -e "${MAGENTA}║${RESET}"
 }
 
 # === Cadre Menu ===
@@ -79,9 +82,9 @@ afficher_cadre() {
 # === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
-    printf "%*s" "$espace_gauche" ""; echo -e "${MGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
-    printf "%*s" "$espace_gauche" ""; echo -e "║ ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ║"
-    printf "%*s" "$espace_gauche" ""; echo -e "║ ${JAUNE}3.${RESET} Lancer une tâche manuellement                    ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram  ${MAGENTA} ║${RESET}"                   
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${CYAN}2.${RESET} Lancer l'autoclick SMM                          ${MAGENTA} ║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║ 3.${RESET} Lancer une tâche manuellement                    ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${VERT}4.${RESET} Mise à jour                                      ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}9.${RESET} Infos & Aide                                     ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}10.${RESET} Follow automatique                               ║"
