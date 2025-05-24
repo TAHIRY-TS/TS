@@ -48,8 +48,8 @@ clear
 
 # Texte sans codes ANSI pour calculer largeur réelle
 texte1="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
-texte2="┃  MAJ Automatique   $(horloge) ┃"
-texte3="┃         Version $VERSION         ┃"
+texte2="┃      MAJ Automatique   $(horloge)      ┃"
+texte3="┃          Version $VERSION              ┃"
 texte4="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 
 # Largeur du terminal
@@ -69,7 +69,8 @@ centrer_et_afficher() {
 centrer_et_afficher "$texte1" "$MAGENTA"
 centrer_et_afficher "$texte2" "$MAGENTA"
 centrer_et_afficher "$texte3" "$MAGENTA"
-centrer_et_afficher "$texte4" "$MAGENTA"echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
+centrer_et_afficher "$texte4" "$MAGENTA"
+echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
 progress_bar && git stash > /dev/null
 
 echo -e "${JAUNE}[2] Telechargement...${RESET}"
