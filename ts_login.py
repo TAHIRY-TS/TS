@@ -15,13 +15,18 @@ def load_json(file_path):
 
 def setup_client(data):
     cl = Client()
-    cl.device = data.get("device_settings", {})
+
+    # Configuration de l'appareil (via set_device)
+    cl.set_device(data.get("device_settings", {}))
+
+    # Configuration agent utilisateur
     cl.user_agent = data.get("user_agent", "")
     cl.country = data.get("country", "US")
     cl.country_code = data.get("country_code", 1)
     cl.locale = data.get("locale", "en_US")
     cl.timezone_offset = data.get("timezone_offset", 0)
 
+    # UUIDs
     uuids = data.get("uuids", {})
     cl.set_uuids(
         uuid=uuids.get("uuid"),
