@@ -114,7 +114,6 @@ menu_principal() {
     case $choix in
         1)
             clear
-            echo -e "${CYAN}Gestion de compte Instagram...${RESET}"
             [[ -f compte_manager.py ]] && python3 compte_manager.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         2)
