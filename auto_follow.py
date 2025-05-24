@@ -92,28 +92,21 @@ def publier_images(client, nombre_images):
         except Exception as e:
             print(f"{R}[✗] Erreur publication : {e}{W}")
 
-def login_avec_session(username, password=None):
-    session_path = os.path.join(SESSION_DIR, f"{username}.json")
+def login_avec_settings(data):
+    username = data.get("username")
+    password = data.get("password")
     client = Client()
-    if os.path.exists(session_path):
-        try:
-            client.load_settings(session_path)
-            client.login(username, password)
-            print(f"{G}[✓] Connexion via session pour @{username}{W}")
-            return client
-        except Exception:
-            os.remove(session_path)
-
     try:
+        client.set_settings(data)
         client.login(username, password)
-        client.dump_settings(session_path)
-        print(f"{G}[✓] Nouvelle session sauvegardée pour @{username}{W}")
+        print(f"{G}[✓] Connexion réussie via settings pour @{username}{W}")
         return client
     except Exception as e:
-        print(f"{R}[✗] Connexion échouée : {e}{W}")
+        print(f"{R}[✗] Connexion échouée pour @{username} : {e}{W}")
         return None
 
 def enregistrer_rapport(activites):
+    os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
     with open(REPORT_PATH, 'w') as f:
         for log in activites:
             f.write(log + "\n")
@@ -148,7 +141,7 @@ if __name__ == "__main__":
 
         for username, data in comptes_utilises:
             if suivis >= n_follow: break
-            client = login_avec_session(username, data.get("password"))
+            client = login_avec_settings(data)
             if client:
                 resultat = follow_user(client, cible)
                 if resultat:
@@ -162,7 +155,7 @@ if __name__ == "__main__":
     elif choix == "2":
         n_img = int(input(f"{Y}Combien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
-            client = login_avec_session(username, data.get("password"))
+            client = login_avec_settings(data)
             if client:
                 publier_images(client, n_img)
                 activites.append(f"{username} → PUBLIÉ {n_img} images")
