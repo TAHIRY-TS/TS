@@ -130,20 +130,17 @@ def extraire_id_depuis_lien(cl, lien, action):
     return None
 def effectuer_action(cl, action, id_cible):
     try:
-
-with open("config/task_data.txt", "w") as f:
-    f.write(lien)
-# Lancer le bon script selon l’action
-if action == "follow":
-    os.system("python follow_action.py")
-elif action == "like":
-    os.system("python like_action.py")
-elif action == "comment":
-    os.system("python comment_action.py")
-elif action == "story view":
-    os.system("python story_view_action.py")
-elif action == "video view":
-    os.system("python video_view_action.py")
+        with open("config/task_data.txt", "w") as f:
+            f.write(lien)
+            if action == "follow":
+                os.system("python follow_action.py")elif action == "like":
+                os.system("python like_action.py")
+            elif action == "comment":
+                os.system("python comment_action.py")
+            elif action == "story view":
+                os.system("python story_view_action.py")
+            elif action == "video view":
+                os.system("python video_view_action.py")
 
 # ---------- Logs ----------
 def log_erreur(txt):
