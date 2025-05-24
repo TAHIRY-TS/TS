@@ -118,8 +118,7 @@ menu_principal() {
             [[ -f compte_manager.py ]] && python3 compte_manager.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         2)
-            clear
-            echo -e "${CYAN}Lancement de l'autoclick SMM...${RESET}"
+            echo -e "${CYAN}Demarrage des taches...${RESET}"
             [[ -f auto_task.py ]] && python3 auto_task.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         3)
