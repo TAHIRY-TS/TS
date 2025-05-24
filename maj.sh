@@ -92,3 +92,5 @@ echo -e "${JAUNE}[3] Mamemerina ilay donné rehetra...${RESET}"
 progress_bar && git stash pop > /dev/null
 
 echo -e "\n${VERT}✓ Vita tsara ! Version ampiasaina : $VERSION${RESET}\n"
+
+read -rp "\nAppyuer sur entrée pour revenir au menu principal..."
