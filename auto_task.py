@@ -133,7 +133,8 @@ def effectuer_action(cl, action, id_cible):
         with open("config/task_data.txt", "w") as f:
             f.write(lien)
             if action == "follow":
-                os.system("python follow_action.py")elif action == "like":
+                os.system("python follow_action.py")
+            elif action == "like":
                 os.system("python like_action.py")
             elif action == "comment":
                 os.system("python comment_action.py")
