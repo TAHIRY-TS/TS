@@ -19,6 +19,7 @@ LOGO_PATH = os.path.join(PROJECT_DIR, 'logo.sh')
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
+os.makedirs(logs, exist_ok=True)
 open(LOG_FILE, 'a').close()
 os.chmod(LOG_FILE, 0o600)
 
