@@ -59,7 +59,7 @@ center_text() {
 
 # Lignes sans couleurs
 ligne1="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
-ligne2="┃$(center_text "MAJ Automatique   $(horloge)")┃"
+ligne2="┃$(center_text "MAJ Automatique   $(horloge)") ${MAGENTA}┃${RESET}"
 ligne3="┃$(center_text "Version $VERSION")┃"
 ligne4="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 
