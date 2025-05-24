@@ -5,6 +5,8 @@ import shutil
 from instagrapi import Client
 from colorama import Fore, Style, init
 
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 init(autoreset=True)
 
 def clear():
