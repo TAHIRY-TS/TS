@@ -57,6 +57,26 @@ def print_header():
     print(" " * padding + Fore.MAGENTA + f"║  {title}  ║")
     print(" " * padding + Fore.MAGENTA + f"╚{border}╝\n")
 
+def afficher_tableau_resultats(success_accounts, failed_accounts):
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+
+    print(Fore.MAGENTA + "\n" + "=" * terminal_width)
+    titre = " RÉSUMÉ DU CYCLE "
+    print(Fore.MAGENTA + titre.center(terminal_width))
+    print(Fore.MAGENTA + "=" * terminal_width)
+
+    if success_accounts:
+        print(Fore.MAGENTA + "\n" + "[✓] Connexions réussies :".center(terminal_width))
+        for acc in success_accounts:
+            print(Fore.MAGENTA + f" - {acc}".center(terminal_width))
+
+    if failed_accounts:
+        print(Fore.MAGENTA + "\n" + "[x] Connexions échouées :".center(terminal_width))
+        for acc, reason in failed_accounts:
+            print(Fore.MAGENTA + f" - {acc} : {reason}".center(terminal_width))
+
+    print(Fore.MAGENTA + "\n" + "=" * terminal_width + "\n")
+
 def main():
     while True:
         clear()
@@ -109,24 +129,14 @@ def main():
                 print(Fore.YELLOW + f"[!] Erreur fatale pour {file} : {err}")
                 failed_accounts.append((file, str(err)))
 
-        print(Fore.CYAN + "\n=== Résumé du cycle ===")
-        if success_accounts:
-            print(Fore.GREEN + f"\n[✓] Succès ({len(success_accounts)} comptes) :")
-            for acc in success_accounts:
-                print(Fore.GREEN + f"   - {acc}")
+        afficher_tableau_resultats(success_accounts, failed_accounts)
 
-        if failed_accounts:
-            print(Fore.YELLOW + f"\n[!] Échecs ({len(failed_accounts)} comptes) :")
-            for acc, reason in failed_accounts:
-                print(Fore.YELLOW + f"   - {acc} : {reason}")
-
-        # MENU : continuer ou quitter
         while True:
             print(Fore.CYAN + "\n[1] Relancer le scan")
             print("[0] Quitter")
             choix = input(Fore.YELLOW + "Votre choix : ").strip()
             if choix == "1":
-                break  # relancer la boucle principale
+                break
             elif choix == "0":
                 print(Fore.CYAN + "\n[!] Fermeture du script.")
                 return
