@@ -105,8 +105,6 @@ def main():
             for acc, reason in failed_accounts:
                 print(Fore.YELLOW + f"   - {acc} : {reason}")
 
-        print(Fore.CYAN + "\n=== Fin du cycle. Relance dans 60 secondes... ===\n")
-        time.sleep(60)  # délai entre chaque cycle
-
+        exit()
 if __name__ == "__main__":
     main()
