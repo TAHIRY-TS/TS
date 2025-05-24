@@ -49,7 +49,7 @@ VERSION="v1.0"
 
 afficher_version() {
     local largeur=55
-    local texte="TS SMM AUTOCLICK - $VERSION"
+    local texte="TS SMM AUTOCLICKS - $VERSION"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2))
     printf "%*s" "$espace_gauche" ""
@@ -62,7 +62,7 @@ afficher_version() {
 # === Cadre Menu ===
 afficher_cadre() {
     local largeur=55
-    local texte="${BOLD}${VERT}"MENU PRINCIPAL"${RESET}"
+    local texte="${BOLD}${VERT}MENU PRINCIPAL${RESET}"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
 
@@ -82,7 +82,7 @@ afficher_cadre() {
 # === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram   ${MAGENTA}║${RESET}"                   
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram            ${MAGENTA}║${RESET}"                   
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} 3.${RESET} Lancer une tâche manuellement                    ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${VERT}4.${RESET} Mise à jour                                      ${MAGENTA}║${RESER}"
