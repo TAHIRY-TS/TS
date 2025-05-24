@@ -160,8 +160,7 @@ menu_principal() {
             ;;
         *)
             echo -e "${ROUGE}Choix invalide. Veuillez réessayer.${RESET}"
-    sleep 2
-    read -r choix
+            sleep 2
             ;;
     esac
 
