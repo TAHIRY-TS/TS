@@ -8,6 +8,7 @@ PAS=5      # Pourcentage de progression à chaque étape
 # ======================
 
 # Couleurs
+MAGENTA="\033[1;35m"
 VERT="\033[1;32m"
 ROUGE="\033[1;31m"
 BLEU="\033[1;34m"
@@ -45,21 +46,30 @@ progress_bar() {
 # Entête
 clear
 
-# Largeur terminal
+# Texte sans codes ANSI pour calculer largeur réelle
+texte1="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+texte2="┃  MAJ Automatique   $(horloge) ┃"
+texte3="┃         Version $VERSION         ┃"
+texte4="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+
+# Largeur du terminal
 largeur=$(tput cols)
 
-# Contenu
-ligne1="${MAGENTA}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${RESET}"
-ligne2="${MAGENTA}┃  MAJ Automatique   $(horloge) ┃${RESET}"
-ligne3="${MAGENTA}┃         ${CYAN}Version $VERSION${MAGENTA}         ┃${RESET}"
-ligne4="${MAGENTA}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
+# Fonction pour afficher une ligne centrée avec couleur
+centrer_et_afficher() {
+    local ligne="$1"
+    local couleur="$2"
+    local longeur=${#ligne}
+    local gauche=$(( (largeur - longeur) / 2 ))
+    printf "%*s" "$gauche" ""
+    echo -e "${couleur}${ligne}${RESET}"
+}
 
-# Affichage centré
-printf "%*s\n" $(( (${#ligne1} + largeur) / 2 )) "$ligne1"
-printf "%*s\n" $(( (${#ligne2} + largeur) / 2 )) "$ligne2"
-printf "%*s\n" $(( (${#ligne3} + largeur) / 2 )) "$ligne3"
-printf "%*s\n" $(( (${#ligne4} + largeur) / 2 )) "$ligne4"
-echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
+# Affichage
+centrer_et_afficher "$texte1" "$MAGENTA"
+centrer_et_afficher "$texte2" "$MAGENTA"
+centrer_et_afficher "$texte3" "$MAGENTA"
+centrer_et_afficher "$texte4" "$MAGENTA"echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
 progress_bar && git stash > /dev/null
 
 echo -e "${JAUNE}[2] Telechargement...${RESET}"
