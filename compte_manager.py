@@ -278,10 +278,11 @@ def menu():
         clear()
         time.sleep(2)
         titre_section("GESTION DES COMPTES INSTAGRAM")
-        print("1. Ajouter un compte")
-        print("2. Lister les comptes")
-        print("3. Supprimer un compte")
-        print("0. Quitter")
+        print("1. 📌 Ajouter un compte")
+        print("2. 📝 Lister les comptes")
+        print("3. 🚫 Supprimer un compte")
+        print("4. 🔄 Reconnection des comptes")
+        print("0. 🔙 Quitter")
         choix = safe_input("\nChoix: ")
 
         if choix == '1':
@@ -291,6 +292,13 @@ def menu():
             safe_input("\nAppuyez sur Entrée...")
         elif choix == '3':
             supprimer_compte()
+        elif choix == '4':
+    clear()
+    titre_section("OUVERTURE DU SCRIPT DE RECONNECTION")
+    for i in range(3, 0, -1):
+        print(f"\033[1;36mRetour au script principal dans {i}...\033[0m", end='\r')
+        time.sleep(1)
+    os.execvp("python", ["python", os.path.join(PROJECT_DIR, "main.py")])
         elif choix == '0':
     titre_section("RETOUR AU MENU PRINCIPAL")
     for i in range(3, 0, -1):
