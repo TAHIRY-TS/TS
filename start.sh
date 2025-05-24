@@ -1,9 +1,8 @@
 #!/bin/bash
-chmod +x *.sh
-chmod +x *.py
+chmod +x ./*.sh ./*.py
 clear
 
-# Définition des couleurs
+# === Couleurs ===
 ROUGE="\033[0;31m"
 JAUNE="\033[0;33m"
 CYAN="\033[0;36m"
@@ -14,29 +13,28 @@ MAGENTA="\033[1;35m"
 VERT="\033[1;32m"
 BOLD="\033[1m"
 
-# logo
+# === Vérification des dépendances ===
+command -v python3 >/dev/null 2>&1 || { echo -e "${ROUGE}Python3 est requis mais non installé.${RESET}"; exit 1; }
+
+# === Logo ===
 affichage_logo() {
     [[ -f logo.sh ]] && source ./logo.sh
 }
 
-# Message animé d'accueil
+# === Message animé d'accueil ===
 afficher_message_animated() {
     local delay=0.3
-    couleurs=(
-        "\033[1;31m" "\033[1;32m" "\033[1;33m"
-        "\033[1;34m" "\033[1;35m" "\033[1;36m" "\033[1;37m"
-    )
-
-    messages=("BIENVENUE !")
+    local couleurs=("\033[1;31m" "\033[1;32m" "\033[1;33m" "\033[1;34m" "\033[1;35m" "\033[1;36m" "\033[1;37m")
+    local messages=("BIENVENUE !")
+    local largeur_terminal=$(tput cols)
 
     for texte in "${messages[@]}"; do
-        largeur_terminal=$(tput cols)
-        longueur=${#texte}
-        espace_gauche=$(( (largeur_terminal - longueur) / 2 ))
+        local longueur=${#texte}
+        local espace_gauche=$(( (largeur_terminal - longueur) / 2 ))
         printf "%*s" "$espace_gauche" ""
         for ((i=0; i<longueur; i++)); do
-            lettre="${texte:$i:1}"
-            couleur=${couleurs[$((RANDOM % ${#couleurs[@]}))]}
+            local lettre="${texte:$i:1}"
+            local couleur=${couleurs[$((RANDOM % ${#couleurs[@]}))]}
             echo -ne "${couleur}${lettre}${RESET}"
             sleep 0.1
         done
@@ -44,7 +42,7 @@ afficher_message_animated() {
     done
 }
 
-# Version
+# === Version ===
 VERSION_FILE="version.txt"
 VERSION="v1.0"
 [[ -f "$VERSION_FILE" ]] && VERSION=$(cat "$VERSION_FILE")
@@ -53,14 +51,11 @@ afficher_version() {
     local largeur=55
     local texte="TS SMM AUTOCLICK - $VERSION"
     local longueur=${#texte}
-    local espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
-
-    printf "%*s" "$espace_gauche" ""
-    printf "║        ${CYAN}%s${RESET}" "$texte"
-    printf "%*s\n" $(( largeur - 10 - longueur )) ""
+    local espace_gauche=$(( ( $(tput cols) - longueur ) / 2 ))
+    printf "%*s${CYAN}%s${RESET}\n" "$espace_gauche" "$texte"
 }
 
-# Cadre
+# === Cadre Menu ===
 afficher_cadre() {
     local largeur=55
     local texte="MENU PRINCIPAL"
@@ -81,25 +76,25 @@ afficher_cadre() {
     echo -e "${MAGENTA}╠$(printf '═%.0s' $(seq 1 $((largeur - 2))))╣${RESET}"
 }
 
-# Options
+# === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${JAUNE}3.${RESET} Lancer une tâche manuellement                    ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${VERT}4.${RESET} Mise à jour                                      ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}9.${RESET} Infos & Aide                                     ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}10.${RESET} Follow automatique                               ║"
     printf "%*s" "$espace_gauche" ""; echo -e "║ ${ROUGE}0.${RESET} Quitter                                          ║"
 }
 
-# Ligne bas du cadre
 ligne_inferieure() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
     printf "%*s" "$espace_gauche" ""
     echo -e "${MAGENTA}╚$(printf '═%.0s' $(seq 1 53))╝${RESET}"
 }
 
-# Menu principal
+# === Menu principal ===
 menu_principal() {
     clear
     affichage_logo
@@ -117,27 +112,34 @@ menu_principal() {
         1)
             clear
             echo -e "${CYAN}Gestion de compte Instagram...${RESET}"
-            [[ -f compte_manager.py ]] && python3 compte_manager.py || echo "${ROUGE}Fichier manquant.${RESET}"
+            [[ -f compte_manager.py ]] && python3 compte_manager.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         2)
             clear
             echo -e "${CYAN}Lancement de l'autoclick SMM...${RESET}"
-            [[ -f auto_task.py ]] && python3 auto_task.py || echo "${ROUGE}Fichier manquant.${RESET}"
+            [[ -f auto_task.py ]] && python3 auto_task.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         3)
             clear
-            echo -e "${CYAN}Lancement d'une tâche manuelle...${RESET}"
-            [[ -f main/introxt_Instagram.sh ]] && bash main/introxt_Instagram.sh || echo "${ROUGE}Fichier manquant.${RESET}"
+            echo -e "${CYAN}Tâche manuelle...${RESET}"
+            [[ -f main/introxt_Instagram.sh ]] && bash main/introxt_Instagram.sh || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         4)
             clear
             echo -e "${CYAN}Mise à jour...${RESET}"
-            [[ -f maj.sh ]] && bash maj.sh || echo "${ROUGE}Fichier maj.sh introuvable.${RESET}"
+            [[ -f maj.sh ]] && bash maj.sh || echo -e "${ROUGE}Fichier maj.sh introuvable.${RESET}"
+            ;;
+        9)
+            clear
+            echo -e "${VERT}Développeur : TAHIRY TS"
+            echo -e "Facebook : https://www.facebook.com/profile.php?id=61553579523412"
+            echo -e "Email : tahiryandriatefy52@gmail.com"
+            echo -e "Version actuelle : ${VERSION}${RESET}"
             ;;
         10)
             clear
-            echo -e "${CYAN}Auto Follow en cours...${RESET}"
-            [[ -f auto_follow.py ]] && python3 auto_follow.py || echo "${ROUGE}Fichier manquant.${RESET}"
+            echo -e "${CYAN}Auto Follow...${RESET}"
+            [[ -f auto_follow.py ]] && python3 auto_follow.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             ;;
         0)
             echo -e "${BLEU}Fermeture du programme...${RESET}"
@@ -150,11 +152,10 @@ menu_principal() {
             ;;
     esac
 
-    echo
-    echo -e "${JAUNE}Appuyez sur Entrée pour revenir au menu...${RESET}"
-    read -r
+    echo -e "${JAUNE}Retour au menu dans 5 secondes...${RESET}"
+    sleep 5
     menu_principal
 }
 
-# Démarrage
+# === Lancement ===
 menu_principal
