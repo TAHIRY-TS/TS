@@ -156,13 +156,13 @@ def journaliser(txt):
 
 # ---------- Extraire tâche ----------
 def extraire_infos(msg):
-  lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
+    lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
     action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
     if lien_match and action_match:
         return lien_match.group(0), action_match.group(1).lower()
     return None, None
 
-# ---------- Gestion des messages Telegram (corrigée et plus robuste) ----------
+# ---------- Gestion des messages Telegram  ----------
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
     try:
