@@ -12,6 +12,7 @@ RESET="\033[0m"
 BLEU="\033[1;34m"
 MAGENTA="\033[1;35m"
 VERT="\033[1;32m"
+BOLD="\033[1m"
 
 # logo
 affichage_logo() {
@@ -55,48 +56,52 @@ VERSION_FILE="version.txt"
 VERSION="v1.0"
 [[ -f "$VERSION_FILE" ]] && VERSION=$(cat "$VERSION_FILE")
 
-# Fonction pour afficher la version
+# Affichage version centrée
 afficher_version() {
+    largeur=55
+    espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
+    printf "%*s" "$espace_gauche" ""
     printf "║        ${CYAN}TS SMM AUTOCLICK - %s${RESET}             ║\n" "$VERSION"
 }
 
-# Fonction pour afficher le cadre du menu
+# Afficher cadre centré avec titre en vert majuscule gras
 afficher_cadre() {
-    largeur=55
-    titre="MENU PRINCIPAL"
-    padding=$(( (largeur - ${#titre} - 2) / 2 ))
+    local largeur=55
+    local titre="${BOLD}${VERT}MENU PRINCIPAL${RESET}"
+    local espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
 
-    printf "╔"
-    printf '═%.0s' $(seq 1 $((largeur - 2)))
-    printf "╗\n"
+    printf "%*s" "$espace_gauche" ""
+    echo -e "${MAGENTA}╔$(printf '═%.0s' $(seq 1 $((largeur - 2))))╗${RESET}"
 
-    printf "║"
-    printf ' %.0s' $(seq 1 "$padding")
-    printf "%s" "$titre"
-    printf ' %.0s' $(seq 1 $((largeur - ${#titre} - padding - 2)))
-    printf "║\n"
+    printf "%*s" "$espace_gauche" ""
+    printf "${MAGENTA}║"
+    printf "%*s" $(( (largeur - 2 + ${#titre}) / 2 )) "$titre"
+    printf "%*s" $(( (largeur - 2 - ${#titre}) / 2 )) ""
+    echo -e "║${RESET}"
 
-    printf "╠"
-    printf '═%.0s' $(seq 1 $((largeur - 2)))
-    printf "╣\n"
+    printf "%*s" "$espace_gauche" ""
+    echo -e "${MAGENTA}╠$(printf '═%.0s' $(seq 1 $((largeur - 2))))╣${RESET}"
 }
 
-# Afficher les options
+# Afficher les options centrées
 afficher_options() {
-    echo -e "║ ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
-    echo -e "║ ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ║"
-    echo -e "║ ${JAUNE}3.${RESET} Lancer une tâche manuellement                    ║"
-    echo -e "║ ${VERT}4.${RESET} Mise à jour                                      ║"
-    echo -e "║ ${BLEU}10.${RESET} Follow                                          ║"
-    echo -e "║ ${BLEU}0.${RESET} Quitter                                          ║"
+    local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${MAGENTA}1.${RESET} Gestion de compte Instagram                      ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${JAUNE}3.${RESET} Lancer une tâche manuellement                    ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${VERT}4.${RESET} Mise à jour                                      ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}10.${RESET} Follow                                          ║"
+    printf "%*s" "$espace_gauche" ""; echo -e "║ ${BLEU}0.${RESET} Quitter                                          ║"
 }
 
+# Ligne inférieure du cadre
 ligne_inferieure() {
-    printf "╚"
-    printf '═%.0s' $(seq 1 53)
-    printf "╝\n"
+    local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
+    printf "%*s" "$espace_gauche" ""
+    echo -e "${MAGENTA}╚$(printf '═%.0s' $(seq 1 53))╝${RESET}"
 }
-# Fonction principale
+
+# Menu principal
 menu_principal() {
     affichage_logo
     afficher_message_animated
