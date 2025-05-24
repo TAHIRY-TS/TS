@@ -188,7 +188,7 @@ async def handler(event):
                 await asyncio.sleep(3)
             return
             
-        if any(phrase in message for phrase in ["Please give us your profil's"]):
+        if "▪️ Please give us your profile's username for tasks completing :" in message.lower():
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
