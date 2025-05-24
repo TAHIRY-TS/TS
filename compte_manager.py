@@ -239,6 +239,30 @@ def lister_comptes():
         for i, f in enumerate(fichiers, 1):
             print(f"{i}. {f.replace('.json', '')}")
     return fichiers
+def nettoyer_sessions_orphelines():
+    clear()
+    titre_section("NETTOYAGE DES SESSIONS ORPHELINES")
+
+    configs = [f.replace('.json', '') for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
+    sessions = [f for f in os.listdir(SESSION_DIR) if f.endswith('_session.json')]
+
+    supprimés = 0
+    for session_file in sessions:
+        username = session_file.replace('_session.json', '')
+        if username not in configs:
+            try:
+                os.remove(os.path.join(SESSION_DIR, session_file))
+                print(f"\n\033[1;33m[SUPPRIMÉ]\033[0m {session_file}")
+                supprimés += 1
+            except Exception as e:
+                erreur(f"\nErreur suppression {session_file}: {e}")
+
+    if supprimés:
+        info(f"{supprimés} session(s) supprimée(s).")
+    else:
+        info("\nAucune session orpheline.")
+
+    safe_input("\nAppuyez sur Entrée pour revenir au menu...")
 
 def supprimer_compte():
     fichiers = lister_comptes()
@@ -282,6 +306,7 @@ def menu():
         print("2. 📝 Lister les comptes")
         print("3. 🚫 Supprimer un compte")
         print("4. 🔄 Reconnection des comptes")
+        print("5. 🗑️ Netoyage de session unitile
         print("0. 🔙 Quitter")
         choix = safe_input("\nChoix: ")
 
@@ -292,6 +317,7 @@ def menu():
             safe_input("\nAppuyez sur Entrée...")
         elif choix == '3':
             supprimer_compte()
+            nettoyer_sessions_orphelines()
         elif choix == '4':
             clear()
             titre_section("OUVERTURE DU SCRIPT DE RECONNECTION")
@@ -299,6 +325,8 @@ def menu():
                 print(f"\033[1;36mOuverture de script de reconnection dans {i} secondes...\033[0m", end='\r')
                 time.sleep(3)
                 os.execvp("python", ["python", os.path.join(PROJECT_DIR, "ts_login.py")])
+        elif choix == '5':
+            nettoyer_sessions_orphelines()
         elif choix == '0':
             clear()
             titre_section("RETOUR AU MENU PRINCIPAL")
