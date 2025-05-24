@@ -131,18 +131,24 @@ menu_principal() {
             clear
             echo -e "${CYAN}Mise à jour...${RESET}"
             [[ -f maj.sh ]] && bash maj.sh || echo -e "${ROUGE}Fichier maj.sh introuvable.${RESET}"
+            read -rp "${JAUNE}Appyuer sur entré pour revenir au menu..."${RESET}
+          menu_principal
             ;;
         9)
             clear
             echo -e "${VERT}Développeur : TAHIRY TS"
-            echo -e "Facebook : https://www.facebook.com/profile.php?id=61553579523412"
+            echo -e "\nfacebook : https://www.facebook.com/profile.php?id=61553579523412"
             echo -e "Email : tahiryandriatefy52@gmail.com"
             echo -e "Version actuelle : ${VERSION}${RESET}"
+            read -rp "${JAUNE}Appyuer sur entré pour revenir au menu..."${RESET}
+          menu_principal
             ;;
         10)
             clear
             echo -e "${CYAN}Auto Follow...${RESET}"
             [[ -f auto_follow.py ]] && python3 auto_follow.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
+            read -rp "${JAUNE}Appyuer sur entré pour revenir au menu..."${RESET}
+           menu_principal
             ;;
         0)
             echo -e "${BLEU}Fermeture du programme...${RESET}"
