@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = PROJECT_DIR
-SESSION_DIR = PROJECT_DIR
+SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
 LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
 LOG_FILE = os.path.join(LOG_DIR, 'history.log')
 LOGO_PATH = os.path.join(PROJECT_DIR, 'logo.sh')
