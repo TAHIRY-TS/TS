@@ -63,20 +63,20 @@ client = TelegramClient(StringSession(session_str), api_id, api_hash)
 
 # ---------- Sélection utilisateur Instagram ----------
 def choisir_utilisateur_random():
-    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json") and f not in ["config.json", "selected_user.json"]]
+    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
     if not fichiers:
-        print(f"{horloge()} Aucun utilisateur trouvé dans {CONFIG_DIR}")
+        print(f"{horloge()} Aucun utilisateur trouvé dans {SESSION_DIR}")
         return None
     fichier_choisi = random.choice(fichiers)
-    chemin = os.path.join(CONFIG_DIR, fichier_choisi)
+    chemin = os.path.join(SESSION_DIR, fichier_choisi)
     with open(chemin, "r") as f:
         user_data = json.load(f)
     with open(SELECTED_USER_PATH, "w") as f:
         json.dump(user_data, f, indent=4)
 
     username = user_data["username"]
-    source_session = os.path.join(SESSION_DIR, f"{username}.session")
-    dest_session = os.path.join(SESSION_DIR, f"select_{username}.session")
+    source_session = os.path.join(f"{username}.session")
+    dest_session = os.path.join(f"select_{username}.session")
 
     if os.path.exists(source_session):
         with open(source_session, "rb") as src, open(dest_session, "wb") as dst:
@@ -128,27 +128,22 @@ def extraire_id_depuis_lien(cl, lien, action):
     except Exception as e:
         print(horloge(), color(f"Erreur ID depuis lien : {str(e)}", "1;31"))
     return None
-
 def effectuer_action(cl, action, id_cible):
     try:
-        if action == "follow":
-            cl.user_follow(id_cible)
-            print(horloge(), color("Suivi effectué", "1;32"))
-        elif action == "like":
-            cl.media_like(id_cible)
-            print(horloge(), color("Like effectué", "1;35"))
-        elif action == "comment":
-            commentaire = random.choice(["Super !", "Cool !", "Nice", "Awesome post"])
-            cl.media_comment(id_cible, commentaire)
-            print(horloge(), color(f"Commentaire : {commentaire}", "1;33"))
-        elif action == "story view":
-            cl.story_view(id_cible)
-            print(horloge(), color("Story vue", "1;36"))
-        elif action == "video view":
-            cl.media_seen([id_cible])
-            print(horloge(), color("Vidéo vue", "1;36"))
-    except Exception as e:
-        print(horloge(), color(f"Erreur action {action} : {str(e)}", "1;31"))
+
+with open("config/task_data.txt", "w") as f:
+    f.write(lien)
+# Lancer le bon script selon l’action
+if action == "follow":
+    os.system("python follow_action.py")
+elif action == "like":
+    os.system("python like_action.py")
+elif action == "comment":
+    os.system("python comment_action.py")
+elif action == "story view":
+    os.system("python story_view_action.py")
+elif action == "video view":
+    os.system("python video_view_action.py")
 
 # ---------- Logs ----------
 def log_erreur(txt):
