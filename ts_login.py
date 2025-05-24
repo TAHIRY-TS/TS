@@ -12,6 +12,7 @@ def clear():
 def load_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
+
 def setup_client(data):
     cl = Client()
 
@@ -34,6 +35,7 @@ def setup_client(data):
     cl.session_id = uuids.get("client_session_id")  # utilisé pour session
 
     return cl
+
 def try_login(cl, username, password):
     try:
         cl.login(username, password)
@@ -41,13 +43,20 @@ def try_login(cl, username, password):
     except Exception as e:
         return str(e)
 
+def save_combined_session(cl, username, password, path):
+    session_data = cl.get_settings()
+    session_data["username"] = username
+    session_data["password"] = password
+    with open(path, "w") as f:
+        json.dump(session_data, f, indent=4)
+
 def main():
     clear()
     print(Fore.CYAN + "\n=== TS LOGIN SESSION AUTO – MULTI-CYCLE MODE ===\n")
 
     os.makedirs("sessions", exist_ok=True)
 
-    json_files = [f for f in os.listdir() if f.endswith(".json")]
+    json_files = [f for f in os.listdir() if f.endswith(".json") and not f.startswith("sessions")]
 
     if not json_files:
         print(Fore.RED + "[x] Aucun fichier .json trouvé.")
@@ -78,7 +87,7 @@ def main():
                     result = try_login(cl, username, password)
 
                     if result == "success":
-                        cl.dump_settings(session_path)
+                        save_combined_session(cl, username, password, session_path)
                         print(Fore.GREEN + f"[✓] Succès : {username}")
                         success_accounts.append(username)
                         login_success = True
@@ -106,5 +115,6 @@ def main():
                 print(Fore.YELLOW + f"   - {acc} : {reason}")
 
         exit()
+
 if __name__ == "__main__":
     main()
