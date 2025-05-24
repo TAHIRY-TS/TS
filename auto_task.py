@@ -14,9 +14,14 @@ from instagrapi import Client as IGClient
 from instagrapi.exceptions import *
 
 # ---------- Utilitaires ----------
-def color(text, code): return f"\033[{code}m{text}\033[0m"
-def horloge(): return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;36")
-def horloge_prefix(): return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
+def color(text, code): 
+    return f"\033[{code}m{text}\033[0m"
+
+def horloge(): 
+    return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;36")
+
+def horloge_prefix(): 
+    return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
 
 # ---------- Répertoires ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,9 +36,6 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
-
-def color(text, code):
-    return f"\033[{code}m{text}\033[0m"
 
 # ---------- Connexion Telegram ----------
 def se_connecter(api_id, api_hash, phone):
@@ -120,14 +122,15 @@ def connexion_instagram():
         print(horloge(), color(f"Erreur Instagram : {str(e)}", "1;31"))
     return None
 
-# ---------- Extraire tâche ----------
+# ---------- Extraire infos tâche ----------
 def extraire_infos(msg):
-    lien_match = re.search(r'(https://www.instagram.com/[^\s)]+)', msg)
-    action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.I)
+    lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
+    action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
     if lien_match and action_match:
-        return lien_match.group(1), action_match.group(1).lower()
+        return lien_match.group(0), action_match.group(1).lower()
     return None, None
 
+# ---------- Extraire ID depuis lien ----------
 def extraire_id_depuis_lien(cl, lien, action):
     try:
         if "instagram.com/p/" in lien or "reel" in lien:
@@ -140,22 +143,32 @@ def extraire_id_depuis_lien(cl, lien, action):
     except Exception as e:
         print(horloge(), color(f"Erreur ID depuis lien : {str(e)}", "1;31"))
     return None
+
+# ---------- Effectuer l'action Instagram ----------
 def effectuer_action(cl, action, id_cible):
     try:
-        with open("config/task_data.txt", "w") as f:
-            f.write(lien)
-            if action == "follow":
-                os.system("python follow_action.py")
-            elif action == "like":
-                os.system("python like_action.py")
-            elif action == "comment":
-                os.system("python comment_action.py")
-            elif action == "story view":
-                os.system("python story_view_action.py")
-            elif action == "video view":
-                os.system("python video_view_action.py")
+        if action == "follow":
+            cl.user_follow(id_cible)
+            print(horloge_prefix() + color("[Action] Follow effectué", "1;32"))
+        elif action == "like":
+            cl.media_like(id_cible)
+            print(horloge_prefix() + color("[Action] Like effectué", "1;32"))
+        elif action == "comment":
+            commentaire = "Nice post!"  # Exemple de commentaire, personnalise si tu veux
+            cl.media_comment(id_cible, commentaire)
+            print(horloge_prefix() + color("[Action] Commentaire effectué", "1;32"))
+        elif action == "story view":
+            cl.story_seen([id_cible])
+            print(horloge_prefix() + color("[Action] Story view effectué", "1;32"))
+        elif action == "video view":
+            # Pour "video view", on peut utiliser media_like pour simuler l'interaction, sinon on ignore
+            cl.media_like(id_cible)
+            print(horloge_prefix() + color("[Action] Video view simulé par like", "1;32"))
+        else:
+            print(horloge_prefix() + color(f"[Action] Action inconnue : {action}", "1;33"))
     except Exception as e:
-        log_erreur(f"[connection IC Error] {e}")
+        log_erreur(f"[Action Error] {e}")
+        print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
 
 # ---------- Logs ----------
 def log_erreur(txt):
@@ -165,14 +178,6 @@ def log_erreur(txt):
 def journaliser(txt):
     with open(os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m-%d}.txt"), "a") as f:
         f.write(f"[{datetime.now():%H:%M:%S}] {txt}\n")
-
-# ---------- Extraire tâche ----------
-def extraire_infos(msg):
-    lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
-    action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
-    if lien_match and action_match:
-        return lien_match.group(0), action_match.group(1).lower()
-    return None, None
 
 # ---------- Gestion des messages Telegram  ----------
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
@@ -201,7 +206,8 @@ async def handler(event):
             await asyncio.sleep(3)
             return
 
-        if "▪️ Please give us your profile's username for tasks completing :" in message.lower() or "⭕️ please choose account from the list" in message.lower():
+        if "▪️ Please give us your profile's username for tasks completing :" in message.lower() or \
+           "⭕️ please choose account from the list" in message.lower():
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
@@ -222,6 +228,10 @@ async def handler(event):
                         await event.respond("✅Completed")
                         await asyncio.sleep(4)
                         await event.respond("📝Tasks📝")
+                    else:
+                        print(horloge_prefix() + color("[⚠️] Impossible d'extraire l'ID cible", "1;33"))
+                else:
+                    print(horloge_prefix() + color("[⚠️] Impossible de se connecter à Instagram", "1;33"))
             else:
                 print(horloge_prefix() + color("[⚠️] Aucune tâche valide extraite", "1;33"))
 
@@ -243,5 +253,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print(horloge() + " Arrêt...")
-        os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
-
+        os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")])
