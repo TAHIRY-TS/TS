@@ -187,6 +187,14 @@ async def handler(event):
                 await event.respond(user["username"])
                 await asyncio.sleep(3)
             return
+            
+        if any(phrase in message for phrase in ["Please give us your profil's"]):
+            user = choisir_utilisateur_random()
+            if user:
+                print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
+                await event.respond(user["username"])
+                await asyncio.sleep(3)
+            return
 
         if "Link" in message:
             lien, action = extraire_infos(message)
