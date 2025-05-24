@@ -306,7 +306,7 @@ def menu():
         print("2. 📝 Lister les comptes")
         print("3. 🚫 Supprimer un compte")
         print("4. 🔄 Reconnection des comptes")
-        print("5. 🗑️ Netoyage de session unitile
+        print("5. 🗑️ Netoyage de session unitile")
         print("0. 🔙 Quitter")
         choix = safe_input("\nChoix: ")
 
