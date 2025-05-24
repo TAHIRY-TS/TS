@@ -9,6 +9,7 @@ import subprocess
 import re
 import random
 import string
+import time
 from datetime import datetime, timezone
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,10 +24,10 @@ open(LOG_FILE, 'a').close()
 os.chmod(LOG_FILE, 0o600)
 
 app_version = "327.0.0.18.75"
+
 def normalize_locale(locale):
-    if not locale:
-        return "fr_FR"
-    return locale.replace('-', '_')
+    return locale.replace('-', '_') if locale else "fr_FR"
+
 def check_cmd(cmd):
     return shutil.which(cmd) is not None
 
@@ -108,16 +109,13 @@ def get_chipset():
 def get_android_device_info():
     try:
         dumpsys = subprocess.check_output(["dumpsys", "package", "com.instagram.android"], encoding='utf-8')
-        version_code_match = re.search(r'versionCode=(\d+)', dumpsys)
-        version_code = version_code_match.group(1) if version_code_match else "999999"
+        version_code = re.search(r'versionCode=(\d+)', dumpsys).group(1)
     except:
         version_code = "314665256"
 
     try:
-        wm_size = subprocess.check_output(["wm", "size"], encoding='utf-8')
-        wm_density = subprocess.check_output(["wm", "density"], encoding='utf-8')
-        resolution = re.search(r'Physical size: (\d+x\d+)', wm_size).group(1)
-        dpi = f"{re.search(r'Physical density: (\d+)', wm_density).group(1)}dpi"
+        resolution = re.search(r'Physical size: (\d+x\d+)', subprocess.check_output(["wm", "size"], encoding='utf-8')).group(1)
+        dpi = f"{re.search(r'Physical density: (\d+)', subprocess.check_output(["wm", "density"], encoding='utf-8')).group(1)}dpi"
     except:
         resolution, dpi = "1080x2400", "420dpi"
 
@@ -164,7 +162,8 @@ def get_android_device_info():
         "build_id": get_prop("ro.build.display.id"),
         "build_tags": get_prop("ro.build.tags"),
         "build_type": get_prop("ro.build.type"),
-        "lang": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}")   }
+        "lang": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}")
+    }
 
     user_agent = (
         f"Instagram {app_version} Android ({device_settings['android_version']}/{device_settings['android_release']}; "
@@ -179,12 +178,13 @@ def get_android_device_info():
         "user_agent": user_agent,
         "country": get_prop("persist.sys.country") or get_prop("ro.product.locale.region") or "FR",
         "country_code": 261,
-        "locale": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}") or "fr_FR",
+        "locale": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}"),
         "timezone_offset": tz_offset
     }
 
 def creer_config():
     clear()
+    time.sleep(2)
     titre_section("AJOUTER UN COMPTE")
     username = safe_input("Nom d'utilisateur Instagram: ").strip()
     password = safe_input("Mot de passe: ").strip()
@@ -219,23 +219,50 @@ def creer_config():
 
     with open(filepath, 'w') as f:
         json.dump(profile, f, indent=4)
-def supprimer_compte():
+
+    success(f"Compte {username} ajouté.")
+    log_action("ajouté", username)
+    safe_input("\nAppuyez sur Entrée...")
+
+def lister_comptes():
     clear()
-    titre_section("SUPPRIMER UN COMPTE")
-    username = safe_input("Nom d'utilisateur à supprimer: ").strip()
+    time.sleep(2)
+    fichiers = sorted([f for f in os.listdir(CONFIG_DIR) if f.endswith('.json') and '_session' not in f])
+    titre_section("COMPTES ENREGISTRÉS")
 
-    fichiers = [
-        os.path.join(CONFIG_DIR, f"{username}.json"),
-        os.path.join(SESSION_DIR, f"{username}_session.json")
-    ]
+    if not fichiers:
+        print("Aucun compte enregistré.")
+    else:
+        for i, f in enumerate(fichiers, 1):
+            print(f"{i}. {f.replace('.json', '')}")
+    return fichiers
 
-    confirm = safe_input(f"\nConfirmer suppression de {username} ? (o/n): ").lower()
+def supprimer_compte():
+    fichiers = lister_comptes()
+    if not fichiers:
+        safe_input("\nAppuyez sur Entrée...")
+        return
+
+    try:
+        choix = int(safe_input("\nNuméro du compte à supprimer: "))
+        username = fichiers[choix - 1].replace('.json', '')
+    except (ValueError, IndexError):
+        erreur("Choix invalide.")
+        safe_input("\nAppuyez sur Entrée...")
+        return
+
+    confirm = safe_input(f"Confirmer suppression de {username} ? (o/n): ").lower()
     if confirm != 'o':
         print("Annulé.")
         safe_input("\nAppuyez sur Entrée...")
         return
 
-    for f in fichiers:
+    fichiers_cible = [
+        os.path.join(CONFIG_DIR, f"{username}.json"),
+        os.path.join(SESSION_DIR, f"{username}_session.json")
+    ]
+
+    for f in fichiers_cible:
         if os.path.exists(f):
             os.remove(f)
             print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m {f}")
@@ -243,84 +270,29 @@ def supprimer_compte():
     log_action("supprimé", username)
     safe_input("\nAppuyez sur Entrée...")
 
-def lister_comptes():
-    clear()
-    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
-
-    titre_section("COMPTES ENREGISTRÉS")
-
-    if not fichiers:
-        print("\nAucun profil enregistré.")
-    else:
-        for f in fichiers:
-            print(" -", f.replace('.json', ''))
-
-    safe_input("\nAppuyez sur Entrée pour revenir au menu...")
-
-def nettoyer_sessions_orphelines():
-    clear()
-    titre_section("NETTOYAGE DES SESSIONS ORPHELINES")
-
-    configs = [f.replace('.json', '') for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
-    sessions = [f for f in os.listdir(SESSION_DIR) if f.endswith('_session.json')]
-
-    supprimés = 0
-    for session_file in sessions:
-        username = session_file.replace('_session.json', '')
-        if username not in configs:
-            try:
-                os.remove(os.path.join(SESSION_DIR, session_file))
-                print(f"\n\033[1;33m[SUPPRIMÉ]\033[0m {session_file}")
-                supprimés += 1
-            except Exception as e:
-                erreur(f"\nErreur suppression {session_file}: {e}")
-
-    if supprimés:
-        info(f"{supprimés} session(s) supprimée(s).")
-    else:
-        info("\nAucune session orpheline.")
-
-    safe_input("\nAppuyez sur Entrée pour revenir au menu...")
-def reconnexion_compte():
-    clear()
-    titre_section("RECONNECTION DU COMPTE")
-    session_creator_path = os.path.join(PROJECT_DIR, "ts_login.py")
-    if not os.path.exists(session_creator_path):
-        erreur("Le fichier session_creator.py est introuvable.")
-        return
-    try:
-        subprocess.run(["python3", session_creator_path], check=True)
-    except subprocess.CalledProcessError as e:
-        erreur(f"Erreur lors de l'exécution de session_creator.py : {e}")
 def menu():
     while True:
         clear()
-        titre_section("GESTION DES COMPTES")
-        print("\n1. Ajouter un compte")
-        print("2. Supprimer un compte")
-        print("3. Lister les comptes")
-        print("4. Nettoyer les sessions orphelines")
-        print("5. Reconnection du compte")
-        print("0. Quitter")
+        time.sleep(2)
+        titre_section("GESTION DES COMPTES INSTAGRAM")
+        print("1. Ajouter un compte")
+        print("2. Lister les comptes")
+        print("3. Supprimer un compte")
+        print("4. Quitter")
+        choix = safe_input("\nChoix: ")
 
-        choix = safe_input("\nChoix: ").strip()
-
-        if choix == "1":
+        if choix == '1':
             creer_config()
-        elif choix == "2":
-            supprimer_compte()
-        elif choix == "3":
+        elif choix == '2':
             lister_comptes()
-        elif choix == "4":
-            nettoyer_sessions_orphelines()
-        elif choix == "5":
-            reconnexion_compte()
-        elif choix == "0":
-            print("\nA bientôt !")
+            safe_input("\nAppuyez sur Entrée...")
+        elif choix == '3':
+            supprimer_compte()
+        elif choix == '4':
             break
         else:
             erreur("Choix invalide.")
-            safe_input("\nAppuyez sur Entrée pour réessayer...")
+            safe_input("\nAppuyez sur Entrée...")
 
 if __name__ == "__main__":
     menu()
