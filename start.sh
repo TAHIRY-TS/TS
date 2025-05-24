@@ -49,14 +49,14 @@ VERSION="v1.0"
 
 afficher_version() {
     local largeur=55
-    local texte="TS SMM AUTOCLICK - $VERSION"
+    local texte="TS SMM AUTOCLICK - ${VERT}$VERSION${RESET}"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2))
     printf "%*s" "$espace_gauche" ""
     printf "${MAGENTA}║${RESET}"
     printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$texte"
     printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
-    echo -e " ${MAGENTA}║${RESET}"
+    echo -e "  ${MAGENTA}║${RESET}"
 }
 
 # === Cadre Menu ===
@@ -73,7 +73,7 @@ afficher_cadre() {
     printf "${MAGENTA}║${RESET}"
     printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$texte"
     printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
-    echo -e "${MAGENTA}║${RESET}"
+    echo -e "  ${MAGENTA}║${RESET}"
 
     printf "%*s" "$espace_gauche" ""
     echo -e "${MAGENTA}╠$(printf '═%.0s' $(seq 1 $((largeur - 2))))╣${RESET}"
