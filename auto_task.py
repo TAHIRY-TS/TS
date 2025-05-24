@@ -14,13 +14,13 @@ from instagrapi import Client as IGClient
 from instagrapi.exceptions import *
 
 # ---------- Utilitaires ----------
-def color(text, code): 
+def color(text, code):
     return f"\033[{code}m{text}\033[0m"
 
-def horloge(): 
+def horloge():
     return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;36")
 
-def horloge_prefix(): 
+def horloge_prefix():
     return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
 
 # ---------- Répertoires ----------
@@ -69,7 +69,7 @@ client = TelegramClient(StringSession(session_str), api_id, api_hash)
 
 # ---------- Sélection utilisateur Instagram ----------
 def choisir_utilisateur_random():
-    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
+    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session") and not f.startswith("select_")]
     if not fichiers:
         print(f"{horloge()} Aucun utilisateur trouvé dans {SESSION_DIR}")
         return None
@@ -81,24 +81,36 @@ def choisir_utilisateur_random():
         with open(chemin_session, "r") as f:
             user_data = json.load(f)
     except Exception as e:
-        print(horloge(), color(f"Erreur lors de la lecture du fichier session : {e}", "1;31"))
-        return None
+        print(horloge(), color(f"Erreur lecture fichier session : {e}", "1;31"))
+        username = fichier_choisi.replace(".session", "").replace("select_", "")
+        json_path = os.path.join(BASE_DIR, f"{username}.json")
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r") as j:
+                    user_data = json.load(j)
+                with open(chemin_session, "w") as s:
+                    json.dump(user_data, s)
+                print(horloge(), color(f"[+] Session régénérée depuis {username}.json", "1;32"))
+            except Exception as e2:
+                print(horloge(), color(f"[!!] Erreur reconstitution session : {e2}", "1;31"))
+                return None
+        else:
+            print(horloge(), color(f"[!!] Fichier {username}.json introuvable", "1;31"))
+            return None
 
-    # Sauvegarde dans selected_user.json
     with open(SELECTED_USER_PATH, "w") as f:
         json.dump(user_data, f, indent=4)
 
-    # Copier le fichier session sous le nom select_<username>.session
     username = user_data.get("username", "undefined_user")
     dest_session = os.path.join(SESSION_DIR, f"select_{username}.session")
     try:
         with open(chemin_session, "rb") as src, open(dest_session, "wb") as dst:
             dst.write(src.read())
     except Exception as e:
-        print(horloge(), color(f"Erreur lors de la copie de session : {e}", "1;31"))
+        print(horloge(), color(f"Erreur copie session : {e}", "1;31"))
         return None
 
-    print(horloge(), color(f"Utilisateur sélectionné : {username}"))
+    print(horloge(), color(f"Utilisateur sélectionné : {username}", "1;32"))
     return user_data
 
 # ---------- Connexion Instagram ----------
@@ -112,6 +124,7 @@ def connexion_instagram():
 
     username = compte["username"]
     session_path = os.path.join(SESSION_DIR, f"select_{username}.session")
+
     cl = IGClient()
     try:
         cl.load_settings(session_path)
@@ -120,11 +133,11 @@ def connexion_instagram():
         return cl
     except Exception as e:
         print(horloge(), color(f"Erreur Instagram : {str(e)}", "1;31"))
-    return None
+        return None
 
 # ---------- Extraire infos tâche ----------
 def extraire_infos(msg):
-    lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
+    lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s)]+', msg)
     action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
     if lien_match and action_match:
         return lien_match.group(0), action_match.group(1).lower()
@@ -154,14 +167,13 @@ def effectuer_action(cl, action, id_cible):
             cl.media_like(id_cible)
             print(horloge_prefix() + color("[Action] Like effectué", "1;32"))
         elif action == "comment":
-            commentaire = "Nice post!"  # Exemple de commentaire, personnalise si tu veux
+            commentaire = "Nice post!"
             cl.media_comment(id_cible, commentaire)
             print(horloge_prefix() + color("[Action] Commentaire effectué", "1;32"))
         elif action == "story view":
             cl.story_seen([id_cible])
             print(horloge_prefix() + color("[Action] Story view effectué", "1;32"))
         elif action == "video view":
-            # Pour "video view", on peut utiliser media_like pour simuler l'interaction, sinon on ignore
             cl.media_like(id_cible)
             print(horloge_prefix() + color("[Action] Video view simulé par like", "1;32"))
         else:
@@ -179,7 +191,7 @@ def journaliser(txt):
     with open(os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m-%d}.txt"), "a") as f:
         f.write(f"[{datetime.now():%H:%M:%S}] {txt}\n")
 
-# ---------- Gestion des messages Telegram  ----------
+# ---------- Gestion des messages Telegram ----------
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
     try:
@@ -206,8 +218,7 @@ async def handler(event):
             await asyncio.sleep(3)
             return
 
-        if "▪️ Please give us your profile's username for tasks completing :" in message.lower() or \
-           "⭕️ please choose account from the list" in message.lower():
+        if "profile's username for tasks" in message.lower() or "choose account from the list" in message.lower():
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
@@ -229,12 +240,11 @@ async def handler(event):
                         await asyncio.sleep(4)
                         await event.respond("📝Tasks📝")
                     else:
-                        print(horloge_prefix() + color("[⚠️] Impossible d'extraire l'ID cible", "1;33"))
+                        print(horloge_prefix() + color("[⚠️] ID cible introuvable", "1;33"))
                 else:
-                    print(horloge_prefix() + color("[⚠️] Impossible de se connecter à Instagram", "1;33"))
+                    print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
             else:
-                print(horloge_prefix() + color("[⚠️] Aucune tâche valide extraite", "1;33"))
-
+                print(horloge_prefix() + color("[⚠️] Tâche invalide extraite", "1;33"))
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
         print(horloge_prefix() + color(f"[Erreur] {e}", "1;31"))
