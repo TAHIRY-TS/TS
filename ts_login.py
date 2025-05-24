@@ -55,29 +55,29 @@ def print_header():
     terminal_width = shutil.get_terminal_size((80, 20)).columns
     border = "═" * (len(title) + 4)
     padding = (terminal_width - len(border)) // 2
-    print("\n" + " " * padding + Fore.MAGENTA + f"╔{border}╗")
-    print(" " * padding + Fore.MAGENTA + f"║  {title}  ║")
-    print(" " * padding + Fore.MAGENTA + f"╚{border}╝\n")
+    print("\n" + " " * padding + Fore.CYAN + f"╔{border}╗")
+    print(" " * padding + Fore.CYAN + f"║  {title}  ║")
+    print(" " * padding + Fore.CYAN + f"╚{border}╝\n")
 
 def afficher_tableau_resultats(success_accounts, failed_accounts):
     terminal_width = shutil.get_terminal_size((80, 20)).columns
 
-    print(Fore.MAGENTA + "\n" + "=" * terminal_width)
+    print(Fore.CYAN + "\n" + "=" * terminal_width)
     titre = " RÉSUMÉ DU CYCLE "
-    print(Fore.MAGENTA + titre.center(terminal_width))
-    print(Fore.MAGENTA + "=" * terminal_width)
+    print(Fore.CYAN + titre.center(terminal_width))
+    print(Fore.CYAN + "=" * terminal_width)
 
     if success_accounts:
-        print(Fore.MAGENTA + "\n" + "[✓] Connexions réussies :".center(terminal_width))
+        print(Fore.GREEN + "\n" + "[✓] Connexions réussies :".center(terminal_width))
         for acc in success_accounts:
-            print(Fore.MAGENTA + f" - {acc}".center(terminal_width))
+            print(Fore.GREEN + f" - {acc}".center(terminal_width))
 
     if failed_accounts:
-        print(Fore.MAGENTA + "\n" + "[x] Connexions échouées :".center(terminal_width))
+        print(Fore.YELLOW + "\n" + "[x] Connexions échouées :".center(terminal_width))
         for acc, reason in failed_accounts:
-            print(Fore.MAGENTA + f" - {acc} : {reason}".center(terminal_width))
+            print(Fore.YELLOW + f" - {acc} : {reason}".center(terminal_width))
 
-    print(Fore.MAGENTA + "\n" + "=" * terminal_width + "\n")
+    print(Fore.CYAN + "\n" + "=" * terminal_width + "\n")
 
 def main():
     while True:
@@ -146,5 +146,6 @@ def main():
             else:
                 print(Fore.RED + "[x] Choix invalide. Veuillez réessayer.")
                 main()
+
 if __name__ == "__main__":
     main()
