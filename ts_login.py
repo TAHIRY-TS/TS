@@ -7,7 +7,6 @@ from instagrapi import Client
 from colorama import Fore, init
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-
 init(autoreset=True)
 
 def clear():
@@ -57,23 +56,21 @@ def print_header():
     print(" " * padding + Fore.CYAN + f"╚{border}╝\n")
 
 def afficher_tableau_resultats(success_accounts, failed_accounts):
-    terminal_width = shutil.get_terminal_size((80, 20)).columns
-    print("\n" + "=" * terminal_width)
-    titre = " RÉSUMÉ DU CYCLE "
-    print(Fore.CYAN + titre.center(terminal_width))
-    print("=" * terminal_width)
+    print(Fore.CYAN + "\n╔" + "═" * 64 + "╗")
+    print(Fore.CYAN + "║{:^64}║".format("RÉSUMÉ DES CONNEXIONS"))
+    print(Fore.CYAN + "╠" + "═" * 19 + "╦" + "═" * 22 + "╦" + "═" * 21 + "╣")
+    print(Fore.CYAN + "║ {:^17} ║ {:^20} ║ {:^19} ║".format("HEURE", "UTILISATEUR", "STATUT"))
+    print(Fore.CYAN + "╠" + "═" * 19 + "╬" + "═" * 22 + "╬" + "═" * 21 + "╣")
 
-    header = f"{'HEURE':<20} | {'UTILISATEUR':<20} | {'STATUT':<10}"
-    print(Fore.CYAN + header)
-    print(Fore.CYAN + "-" * len(header))
+    for username, heure in success_accounts:
+        username = username or "N/A"
+        print(Fore.GREEN + "║ {:<17} ║ {:<20} ║ {:<19} ║".format(heure, username, "SUCCÈS"))
 
-    for acc, heure in success_accounts:
-        print(Fore.GREEN + f"{heure:<20} | {acc:<20} | {'SUCCÈS':<10}")
+    for username, heure, _ in failed_accounts:
+        username = username or "N/A"
+        print(Fore.YELLOW + "║ {:<17} ║ {:<20} ║ {:<19} ║".format(heure, username, "ÉCHEC"))
 
-    for acc, heure, reason in failed_accounts:
-        print(Fore.YELLOW + f"{heure:<20} | {acc:<20} | {'ÉCHEC':<10}")
-
-    print("=" * terminal_width + "\n")
+    print(Fore.CYAN + "╚" + "═" * 19 + "╩" + "═" * 22 + "╩" + "═" * 21 + "╝\n")
 
 def main():
     while True:
@@ -90,12 +87,17 @@ def main():
         failed_accounts = []
 
         for file in json_files:
+            now_str = datetime.now().strftime("%H:%M:%S %d/%m")
             try:
                 data = load_json(file)
                 username = data.get("username")
                 password = data.get("password")
+
+                if not username or not password:
+                    print(Fore.RED + f"[x] Fichier invalide (username/password manquant) : {file}")
+                    continue
+
                 session_path = f"sessions/{username}.session"
-                now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
                 if os.path.exists(session_path):
                     print(Fore.GREEN + f"[✓] Session valide détectée pour {username} – Ignoré")
@@ -117,16 +119,15 @@ def main():
                         login_success = True
                     else:
                         retry_count += 1
-                        print(Fore.YELLOW + f"[!] Échec tentative {retry_count} : {username} -> {result}")
+                        print(Fore.YELLOW + f"[!] Tentative {retry_count} échouée : {username} -> {result}")
                         time.sleep(2)
 
                 if not login_success:
                     failed_accounts.append((username, now_str, result))
 
             except Exception as err:
-                now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                print(Fore.YELLOW + f"[!] Erreur fatale pour {file} : {err}")
-                failed_accounts.append((file, now_str, str(err)))
+                print(Fore.RED + f"[!] Erreur avec {file} : {err}")
+                failed_accounts.append((None, now_str, str(err)))
 
         afficher_tableau_resultats(success_accounts, failed_accounts)
 
@@ -142,7 +143,6 @@ def main():
                 os.execvp("python", ["python", os.path.join(PROJECT_DIR, "compte_manager.py")])
             else:
                 print(Fore.RED + "[x] Choix invalide. Veuillez réessayer.")
-                main()
 
 if __name__ == "__main__":
     main()
