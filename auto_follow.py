@@ -14,7 +14,7 @@ W = '\033[0m'
 
 # Dossiers
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-CONFIG_DIR = os.path.join(BASE, 'scripts', 'config')
+CONFIG_DIR = os.path.join(BASE, 'config')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 
 def load_json(path):
@@ -54,7 +54,7 @@ def follow_user(client, target_username):
         print(f"{R}[✗] Erreur follow @{target_username} : {e}{W}")
 
 if __name__ == "__main__":
-    print(f"{C}--- Traitement avec instagrapi & settings JSON ---{W}")
+    print(f"{C}--- choix d'utilisateur ---{W}")
     comptes = get_all_accounts()
     if not comptes:
         print(f"{R}[!] Aucun compte valide trouvé dans {CONFIG_DIR}.{W}")
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         try:
             client.set_settings(data)
             client.login(data['username'], data['password'])  # rapide grâce aux settings
-            print(f"{G}[✓] Connexion réussie avec settings : @{username}{W}")
+            print(f"{G}[✓] Connexion réussie pour @{username}{W}")
             follow_user(client, username_cible)
             save_json(SELECTED_USER_PATH, data)
             break  # utiliser un seul compte
