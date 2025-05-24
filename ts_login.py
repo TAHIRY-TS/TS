@@ -12,12 +12,12 @@ def clear():
 def load_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
-
 def setup_client(data):
     cl = Client()
 
-    # Définir l'appareil
-    cl.set_device(data.get("device_settings", {}))
+    # Injecter device_settings
+    if "device_settings" in data:
+        cl.device_settings = data["device_settings"]
 
     # Définir User-Agent et infos régionales
     cl.user_agent = data.get("user_agent", "")
@@ -26,15 +26,12 @@ def setup_client(data):
     cl.locale = data.get("locale", "en_US")
     cl.timezone_offset = data.get("timezone_offset", 0)
 
-    # Définir les UUIDs
+    # Injecter les UUIDs manuellement
     uuids = data.get("uuids", {})
-    cl.set_uuids(
-        phone_id=uuids.get("phone_id"),
-        guid=uuids.get("client_session_id"),
-        device_id=uuids.get("android_device_id"),
-        adid=uuids.get("advertising_id"),
-        session_id=uuids.get("client_session_id")
-    )
+    cl.phone_id = uuids.get("phone_id")
+    cl.advertising_id = uuids.get("advertising_id")
+    cl.uuid = uuids.get("client_session_id")  # utilisé comme guid
+    cl.session_id = uuids.get("client_session_id")  # utilisé pour session
 
     return cl
 def try_login(cl, username, password):
