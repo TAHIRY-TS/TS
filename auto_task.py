@@ -147,11 +147,12 @@ def effectuer_action(cl, action, id_cible):
 def log_erreur(txt):
     with open(ERROR_LOG, "a") as f:
         f.write(f"[{datetime.now()}] {txt}\n")
+except return
 
 def journaliser(txt):
     with open(os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m-%d}.txt"), "a") as f:
         f.write(f"[{datetime.now():%H:%M:%S}] {txt}\n")
-
+    except return
 # ---------- Gestion des messages Telegram ----------
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
