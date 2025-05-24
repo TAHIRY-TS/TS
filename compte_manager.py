@@ -285,7 +285,7 @@ def supprimer_compte():
 
     fichiers_cible = [
         os.path.join(CONFIG_DIR, f"{username}.json"),
-        os.path.join(SESSION_DIR, f"{username}_session.json")
+        os.path.join(SESSION_DIR, f"{username}.session")
     ]
 
     for f in fichiers_cible:
@@ -295,7 +295,6 @@ def supprimer_compte():
 
     log_action("supprimé", username)
     safe_input("\nAppuyez sur Entrée...")
-
 def menu():
     while True:
         clear()
