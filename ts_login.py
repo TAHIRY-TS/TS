@@ -77,7 +77,8 @@ def main():
         clear()
         print_header()
         os.makedirs("sessions", exist_ok=True)
-        json_files = [f for f in os.listdir() if f.endswith(".json") and not f.startswith("sessions")]
+
+        json_files = [f for f in os.listdir() if f.endswith(".json") and f not in ("config.json", "selected_user.json") and not f.startswith("sessions")]
 
         if not json_files:
             print(Fore.RED + "[x] Aucun fichier .json trouvé.")
