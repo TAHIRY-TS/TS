@@ -166,15 +166,18 @@ async def handler(event):
             if balance:
                 print(horloge_prefix() + color(f"[💰] Solde : {balance.group(1)}", "1;33"))
             await event.respond("📝Tasks📝")
+            await asyncio.sleep(3)
             return
 
         if "Choose social network" in message:
             await event.respond("Instagram")
+            await asyncio.sleep(3)
             return
 
         if "no active tasks" in message.lower():
             print(horloge_prefix() + color("[⛔] Aucune tâche dispo", "1;33"))
             await event.respond("Instagram")
+            await asyncio.sleep(3)
             return
 
         if any(x in message.lower() for x in ["username for tasks", "choose account"]):
