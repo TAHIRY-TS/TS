@@ -2,8 +2,9 @@ import os
 import json
 import time
 import shutil
+from datetime import datetime
 from instagrapi import Client
-from colorama import Fore, Style, init
+from colorama import Fore, init
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,22 +19,18 @@ def load_json(file_path):
 
 def setup_client(data):
     cl = Client()
-
     if "device_settings" in data:
         cl.device_settings = data["device_settings"]
-
     cl.user_agent = data.get("user_agent", "")
     cl.country = data.get("country", "US")
     cl.country_code = data.get("country_code", 1)
     cl.locale = data.get("locale", "en_US")
     cl.timezone_offset = data.get("timezone_offset", 0)
-
     uuids = data.get("uuids", {})
     cl.phone_id = uuids.get("phone_id")
     cl.advertising_id = uuids.get("advertising_id")
     cl.uuid = uuids.get("client_session_id")
     cl.session_id = uuids.get("client_session_id")
-
     return cl
 
 def try_login(cl, username, password):
@@ -61,30 +58,28 @@ def print_header():
 
 def afficher_tableau_resultats(success_accounts, failed_accounts):
     terminal_width = shutil.get_terminal_size((80, 20)).columns
-
-    print(Fore.CYAN + "\n" + "=" * terminal_width)
+    print("\n" + "=" * terminal_width)
     titre = " RÉSUMÉ DU CYCLE "
     print(Fore.CYAN + titre.center(terminal_width))
-    print(Fore.CYAN + "=" * terminal_width)
+    print("=" * terminal_width)
 
-    if success_accounts:
-        print(Fore.GREEN + "\n" + "[✓] Connexions réussies :".center(terminal_width))
-        for acc in success_accounts:
-            print(Fore.GREEN + f" - {acc}".center(terminal_width))
+    header = f"{'HEURE':<20} | {'UTILISATEUR':<20} | {'STATUT':<10}"
+    print(Fore.CYAN + header)
+    print(Fore.CYAN + "-" * len(header))
 
-    if failed_accounts:
-        print(Fore.YELLOW + "\n" + "[x] Connexions échouées :".center(terminal_width))
-        for acc, reason in failed_accounts:
-            print(Fore.YELLOW + f" - {acc} : {reason}".center(terminal_width))
+    for acc, heure in success_accounts:
+        print(Fore.GREEN + f"{heure:<20} | {acc:<20} | {'SUCCÈS':<10}")
 
-    print(Fore.CYAN + "\n" + "=" * terminal_width + "\n")
+    for acc, heure, reason in failed_accounts:
+        print(Fore.YELLOW + f"{heure:<20} | {acc:<20} | {'ÉCHEC':<10}")
+
+    print("=" * terminal_width + "\n")
 
 def main():
     while True:
         clear()
         print_header()
         os.makedirs("sessions", exist_ok=True)
-
         json_files = [f for f in os.listdir() if f.endswith(".json") and not f.startswith("sessions")]
 
         if not json_files:
@@ -100,10 +95,11 @@ def main():
                 username = data.get("username")
                 password = data.get("password")
                 session_path = f"sessions/{username}.session"
+                now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
                 if os.path.exists(session_path):
                     print(Fore.GREEN + f"[✓] Session valide détectée pour {username} – Ignoré")
-                    success_accounts.append(username)
+                    success_accounts.append((username, now_str))
                     continue
 
                 print(Fore.BLUE + f"\n[*] Connexion pour : {username}")
@@ -117,7 +113,7 @@ def main():
                     if result == "success":
                         save_combined_session(cl, username, password, session_path)
                         print(Fore.GREEN + f"[✓] Succès : {username}")
-                        success_accounts.append(username)
+                        success_accounts.append((username, now_str))
                         login_success = True
                     else:
                         retry_count += 1
@@ -125,11 +121,12 @@ def main():
                         time.sleep(2)
 
                 if not login_success:
-                    failed_accounts.append((username, result))
+                    failed_accounts.append((username, now_str, result))
 
             except Exception as err:
+                now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 print(Fore.YELLOW + f"[!] Erreur fatale pour {file} : {err}")
-                failed_accounts.append((file, str(err)))
+                failed_accounts.append((file, now_str, str(err)))
 
         afficher_tableau_resultats(success_accounts, failed_accounts)
 
