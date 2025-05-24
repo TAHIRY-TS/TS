@@ -48,7 +48,7 @@ VERSION="v1.0"
 [[ -f "$VERSION_FILE" ]] && VERSION=$(cat "$VERSION_FILE")
 
 afficher_version() {
-    local largeur=55
+    local largeur=56
     local texte="TS SMM AUTOCLICKS - $VERSION"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2))
@@ -61,8 +61,8 @@ afficher_version() {
 
 # === Cadre Menu ===
 afficher_cadre() {
-    local largeur=55
-    local texte="${BOLD}${VERT}MENU PRINCIPAL${RESET}"
+    local largeur=56
+    local titre="${BOLD}${VERT}MENU PRINCIPAL${RESET}"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
 
@@ -71,7 +71,7 @@ afficher_cadre() {
 
     printf "%*s" "$espace_gauche" ""
     printf "${MAGENTA}║${RESET}"
-    printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$texte"
+    printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$titre"
     printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
     echo -e "${MAGENTA}║${RESET}"
 
