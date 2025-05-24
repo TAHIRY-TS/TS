@@ -11,7 +11,7 @@ import random
 import string
 from datetime import datetime, timezone
 
-PROJECT_DIR = os.path.join(os.path.dirname(__file__), '..')
+PROJECT_DIR = os.path.abspath(os.path.join(__file__))
 CONFIG_DIR = os.path.join(PROJECT_DIR, 'config')
 SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
 LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
