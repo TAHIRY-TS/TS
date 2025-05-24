@@ -63,7 +63,6 @@ afficher_version() {
 afficher_cadre() {
     local largeur=55
     local texte="MENU PRINCIPAL"
-    local titre="${BOLD}${VERT}${texte}${RESET}"
     local longueur=${#texte}
     local espace_gauche=$(( ( $(tput cols) - largeur ) / 2 ))
 
@@ -72,7 +71,7 @@ afficher_cadre() {
 
     printf "%*s" "$espace_gauche" ""
     printf "${MAGENTA}║${RESET}"
-    printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$titre"
+    printf "%*s" $(( (largeur - 2 + longueur) / 2 )) "$texte"
     printf "%*s" $(( (largeur - 2 - longueur) / 2 )) ""
     echo -e "${MAGENTA}║${RESET}"
 
@@ -83,13 +82,13 @@ afficher_cadre() {
 # === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram                   ${MAGENTA}║${RESET}"                   
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} Gestion de compte Instagram                       ${MAGENTA}║${RESET}"                   
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${CYAN}2.${RESET} Lancer l'autoclick SMM                           ${MAGENTA}║${RESET}"
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} 3.${RESET} Lancer une tâche manuellement                           ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} 3.${RESET} Lancer une tâche manuellement                      ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${VERT}4.${RESET} Mise à jour                                      ${MAGENTA}║${RESER}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${BLEU}9.${RESET} Infos & Aide                                     ${MAGENTA}║${RESET}"
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${REST} ${BLEU}10.${RESET} Follow automatique                               ${MAGENTA}║${RESET}"
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${ROUGE}0.${RESET} Quitter                                         ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${REST} ${BLEU}10.${RESET} Follow automatique                              ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${ROUGE}0.${RESET} Quitter                                          ${MAGENTA}║${RESET}"
 }
 
 ligne_inferieure() {
