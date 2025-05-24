@@ -317,8 +317,6 @@ def menu():
             supprimer_compte()
             nettoyer_sessions_orphelines()
         elif choix == '4':
-            clear()
-            titre_section("OUVERTURE DU SCRIPT DE RECONNECTION")
             for i in range(3, 0, -1):
                 print(f"\033[1;36mOuverture de script de reconnection dans {i} secondes...\033[0m", end='\r')
                 time.sleep(3)
@@ -326,9 +324,7 @@ def menu():
         elif choix == '5':
             nettoyer_sessions_orphelines()
         elif choix == '0':
-            clear()
-            titre_section("RETOUR AU MENU PRINCIPAL")
-            for i in range(3, 0, -1):
+             for i in range(3, 0, -1):
                 print(f"\033[1;36mRetour à l'accueil dans {i} secondes ...\033[0m", end='\r')
                 time.sleep(3)
                 os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
