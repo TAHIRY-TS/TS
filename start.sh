@@ -82,12 +82,12 @@ afficher_cadre() {
 # === Options ===
 afficher_options() {
     local espace_gauche=$(( ( $(tput cols) - 55 ) / 2 ))
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} ⚙️ Gestion de compte Instagram                    ${MAGENTA}║${RESET}"                   
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${CYAN}2.${RESET} ⛏️ Lancer l'autoclick SMM                        ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${MAGENTA}1.${RESET} ⚙ Gestion de compte Instagram                    ${MAGENTA}║${RESET}"                   
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${CYAN}2.${RESET} ⛏️ Lancer l'autoclick SMM                         ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} 3.${RESET} 🪓 Lancer une tâche manuellement                  ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${VERT}4.${RESET} 📥 Mise à jour                                   ${MAGENTA}║${RESER}"
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${BLEU}9.${RESET} 🛃 Infos & Aide                                  ${MAGENTA}║${RESET}"
-    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${REST} ${BLEU}10.${RESET} ❤ Follow automatique                             ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${BLEU}5.${RESET} 🛃 Infos & Aide                                  ${MAGENTA}║${RESET}"
+    printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${REST} ${BLEU}6.${RESET} ❤ Follow automatique                             ${MAGENTA}║${RESET}"
     printf "%*s" "$espace_gauche" ""; echo -e "${MAGENTA}║${RESET} ${ROUGE}0.${RESET} 🔙 Quitter                                       ${MAGENTA}║${RESET}"
 }
 
@@ -134,7 +134,7 @@ menu_principal() {
             read -r    
         menu_principal
             ;;
-        9)
+        5)
             clear
             echo -e "${VERT}Développeur : TAHIRY TS"
             echo -e "\nfacebook : https://www.facebook.com/profile.php?id=61553579523412"
@@ -144,7 +144,7 @@ menu_principal() {
             read -r
          menu_principal
             ;;
-        10)
+        6)
             clear
             echo -e "${CYAN}Auto Follow...${RESET}"
             [[ -f auto_follow.py ]] && python3 auto_follow.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
