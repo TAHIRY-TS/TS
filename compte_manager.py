@@ -293,18 +293,18 @@ def menu():
         elif choix == '3':
             supprimer_compte()
         elif choix == '4':
-    clear()
-    titre_section("OUVERTURE DU SCRIPT DE RECONNECTION")
-    for i in range(3, 0, -1):
-        print(f"\033[1;36mRetour au script principal dans {i}...\033[0m", end='\r')
-        time.sleep(1)
-    os.execvp("python", ["python", os.path.join(PROJECT_DIR, "ts_login.py")])
+            clear()
+            titre_section("OUVERTURE DU SCRIPT DE RECONNECTION")
+            for i in range(3, 0, -1):
+                print(f"\033[1;36mRetour au script principal dans {i}...\033[0m", end='\r')
+                time.sleep(1)
+                os.execvp("python", ["python", os.path.join(PROJECT_DIR, "ts_login.py")])
         elif choix == '0':
-    titre_section("RETOUR AU MENU PRINCIPAL")
-    for i in range(3, 0, -1):
-        print(f"\033[1;36mRetour à l'accueil dans {i}...\033[0m", end='\r')
-        time.sleep(1)
-    os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
+            titre_section("RETOUR AU MENU PRINCIPAL")
+            for i in range(3, 0, -1):
+                print(f"\033[1;36mRetour à l'accueil dans {i}...\033[0m", end='\r')
+                time.sleep(1)
+                os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
         else:
             erreur("Choix invalide.")
             safe_input("\nAppuyez sur Entrée...")
