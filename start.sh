@@ -161,7 +161,7 @@ menu_principal() {
         *)
             echo -e "${ROUGE}Choix invalide. Veuillez réessayer.${RESET}"
             sleep 1
-        afficher_options
+        menu_principal
             ;;
     esac
 
