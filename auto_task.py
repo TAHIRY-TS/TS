@@ -153,13 +153,22 @@ def log_erreur(txt):
 def journaliser(txt):
     with open(os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m-%d}.txt"), "a") as f:
         f.write(f"[{datetime.now():%H:%M:%S}] {txt}\n")
-    
-# ---------- Gestion des messages Telegram ----------
+
+# ---------- Extraire tâche ----------
+def extraire_infos(msg):
+  lien_match = re.search(r'https?://(www\.)?instagram\.com/[^\s\)]+', msg)
+    action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
+    if lien_match and action_match:
+        return lien_match.group(0), action_match.group(1).lower()
+    return None, None
+
+# ---------- Gestion des messages Telegram (corrigée et plus robuste) ----------
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
     try:
-        message = event.message.message
+        message = event.message.message.strip()
         journaliser(message)
+        print(horloge_prefix() + color("[BOT]", "1;35") + f" Nouveau message : {message[:60]}...")
 
         if "My Balance" in message:
             balance = re.search(r'My Balance\s*:\s*\*\*(\d+(\.\d+)?)', message)
@@ -187,8 +196,8 @@ async def handler(event):
                 await event.respond(user["username"])
                 await asyncio.sleep(3)
             return
-            
-        if "▪️ Please give us your profile's username for tasks completing :" in message.lower():
+
+        if "your profile's username for tasks completing" in message.lower():
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
@@ -196,7 +205,7 @@ async def handler(event):
                 await asyncio.sleep(3)
             return
 
-        if "Link" in message:
+        if "instagram.com/" in message.lower():
             lien, action = extraire_infos(message)
             if lien and action:
                 task_id = hashlib.md5(lien.encode()).hexdigest()[:10]
@@ -209,8 +218,12 @@ async def handler(event):
                         await event.respond("✅Completed")
                         await asyncio.sleep(4)
                         await event.respond("📝Tasks📝")
+            else:
+                print(horloge_prefix() + color("[⚠️] Aucune tâche valide extraite", "1;33"))
+
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
+        print(horloge_prefix() + color(f"[Erreur] {e}", "1;31"))
 
 # ---------- Main ----------
 async def main():
