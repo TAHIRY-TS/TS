@@ -23,7 +23,7 @@ fi
 
 # Horloge
 horloge() {
-    echo -e "${CYAN}[$(date +'TS %H:%M:%S')]${RESET}"
+    echo -e "${BLEU}[$(date +'TS %H:%M:%S')]${RESET}"
 }
 
 # Barre de progression
@@ -34,7 +34,7 @@ progress_bar() {
 
     while [ $progress -le 100 ]; do
         local count=$((progress / 5))
-        local bar=$(printf "%-${count}s" | tr ' ' '•')
+        local bar=$(printf "%-${count}s" | tr ' ' '-')
         printf "\r${BLEU}Progression : [%-20s] %3d%%${RESET}" "$bar" "$progress"
         sleep "$delay"
         progress=$((progress + step))
@@ -44,15 +44,22 @@ progress_bar() {
 
 # Entête
 clear
-echo -e "${MAGENTA}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${RESET}"
 
-echo -e "${MAGENTA}┃  MAJ Automatique   $(horloge) ┃${RESET}"
+# Largeur terminal
+largeur=$(tput cols)
 
-echo -e "${MAGENTA}┃         ${CYAN}Version $VERSION${RESET}    ┃${RESET}"
+# Contenu
+ligne1="${MAGENTA}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${RESET}"
+ligne2="${MAGENTA}┃  MAJ Automatique   $(horloge) ┃${RESET}"
+ligne3="${MAGENTA}┃         ${CYAN}Version $VERSION${MAGENTA}         ┃${RESET}"
+ligne4="${MAGENTA}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
 
-echo -e "${MAGENTA}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
-
-echo -e "${JAUNE}[1] Mitahiry ireo doné rehetra...${RESET}"
+# Affichage centré
+printf "%*s\n" $(( (${#ligne1} + largeur) / 2 )) "$ligne1"
+printf "%*s\n" $(( (${#ligne2} + largeur) / 2 )) "$ligne2"
+printf "%*s\n" $(( (${#ligne3} + largeur) / 2 )) "$ligne3"
+printf "%*s\n" $(( (${#ligne4} + largeur) / 2 )) "$ligne4"
+echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
 progress_bar && git stash > /dev/null
 
 echo -e "${JAUNE}[2] Telechargement...${RESET}"
