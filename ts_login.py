@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import shutil
 from instagrapi import Client
 from colorama import Fore, Style, init
 
@@ -16,23 +17,20 @@ def load_json(file_path):
 def setup_client(data):
     cl = Client()
 
-    # Injecter device_settings
     if "device_settings" in data:
         cl.device_settings = data["device_settings"]
 
-    # Définir User-Agent et infos régionales
     cl.user_agent = data.get("user_agent", "")
     cl.country = data.get("country", "US")
     cl.country_code = data.get("country_code", 1)
     cl.locale = data.get("locale", "en_US")
     cl.timezone_offset = data.get("timezone_offset", 0)
 
-    # Injecter les UUIDs manuellement
     uuids = data.get("uuids", {})
     cl.phone_id = uuids.get("phone_id")
     cl.advertising_id = uuids.get("advertising_id")
-    cl.uuid = uuids.get("client_session_id")  # utilisé comme guid
-    cl.session_id = uuids.get("client_session_id")  # utilisé pour session
+    cl.uuid = uuids.get("client_session_id")
+    cl.session_id = uuids.get("client_session_id")
 
     return cl
 
@@ -50,19 +48,27 @@ def save_combined_session(cl, username, password, path):
     with open(path, "w") as f:
         json.dump(session_data, f, indent=4)
 
+def print_header():
+    title = " TS LOGIN SESSION AUTO – MULTI-CYCLE MODE "
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+    border = "═" * (len(title) + 4)
+    padding = (terminal_width - len(border)) // 2
+    print("\n" + " " * padding + Fore.MAGENTA + f"╔{border}╗")
+    print(" " * padding + Fore.MAGENTA + f"║  {title}  ║")
+    print(" " * padding + Fore.MAGENTA + f"╚{border}╝\n")
+
 def main():
-    clear()
-    print(Fore.CYAN + "\n=== TS LOGIN SESSION AUTO – MULTI-CYCLE MODE ===\n")
-
-    os.makedirs("sessions", exist_ok=True)
-
-    json_files = [f for f in os.listdir() if f.endswith(".json") and not f.startswith("sessions")]
-
-    if not json_files:
-        print(Fore.RED + "[x] Aucun fichier .json trouvé.")
-        return
-
     while True:
+        clear()
+        print_header()
+        os.makedirs("sessions", exist_ok=True)
+
+        json_files = [f for f in os.listdir() if f.endswith(".json") and not f.startswith("sessions")]
+
+        if not json_files:
+            print(Fore.RED + "[x] Aucun fichier .json trouvé.")
+            break
+
         success_accounts = []
         failed_accounts = []
 
@@ -114,10 +120,18 @@ def main():
             for acc, reason in failed_accounts:
                 print(Fore.YELLOW + f"   - {acc} : {reason}")
 
-    print("OUVERTURE DU SCRIPT PRINCIPAL")
-    for i in range(3, 0, -1):
-        print(f"\033[1;36mRetour au script principal dans {i}...\033[0m", end='\r')
-        time.sleep(10)
-    os.execvp("python", ["python", os.path.join(PROJECT_DIR, "compte_manager.py")])
+        # MENU : continuer ou quitter
+        while True:
+            print(Fore.CYAN + "\n[1] Relancer le scan")
+            print("[0] Quitter")
+            choix = input(Fore.YELLOW + "Votre choix : ").strip()
+            if choix == "1":
+                break  # relancer la boucle principale
+            elif choix == "0":
+                print(Fore.CYAN + "\n[!] Fermeture du script.")
+                return
+            else:
+                print(Fore.RED + "[x] Choix invalide. Veuillez réessayer.")
+
 if __name__ == "__main__":
     main()
