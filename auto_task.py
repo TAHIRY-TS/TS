@@ -20,11 +20,10 @@ def horloge_prefix(): return color(f"[TS {datetime.now().strftime('%H:%M')}]", "
 
 # ---------- Répertoires ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = os.path.join(BASE_DIR, 'config')
-SESSION_DIR = os.path.join(BASE_DIR, 'session')
+CONFIG_DIR = BASE_DIR
+SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 
-os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)
 
