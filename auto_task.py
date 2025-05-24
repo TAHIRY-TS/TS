@@ -185,6 +185,7 @@ async def handler(event):
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
                 await event.respond(user["username"])
+                await asyncio.sleep(3)
             return
 
         if "Link" in message:
@@ -198,7 +199,7 @@ async def handler(event):
                     if id_cible:
                         effectuer_action(cl, action, id_cible)
                         await event.respond("✅Completed")
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(4)
                         await event.respond("📝Tasks📝")
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
@@ -208,6 +209,7 @@ async def main():
     print(horloge() + " Connexion à Telegram...")
     await client.start()
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+    await asyncio.sleep(3)
     print(horloge_prefix() + color("Connecté", "1;32"))
     await client.run_until_disconnected()
 
