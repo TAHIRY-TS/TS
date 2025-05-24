@@ -6,7 +6,6 @@ import time
 import asyncio
 import random
 import hashlib
-import subprocess
 from datetime import datetime
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -20,16 +19,16 @@ def horloge(): return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;36
 def horloge_prefix(): return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
 
 # ---------- Répertoires ----------
-BASE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = os.path.join(BASE, 'config')
-SESSION_DIR = os.path.join(BASE, 'session')
-LOGS_DIR = os.path.join(BASE, 'logs')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+SESSION_DIR = os.path.join(BASE_DIR, 'session')
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 
 os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-CONFIG_PATH = os.path.join(BASE_DIR, 'config.json')
+CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
 
@@ -75,6 +74,18 @@ def choisir_utilisateur_random():
         user_data = json.load(f)
     with open(SELECTED_USER_PATH, "w") as f:
         json.dump(user_data, f, indent=4)
+
+    username = user_data["username"]
+    source_session = os.path.join(SESSION_DIR, f"{username}.session")
+    dest_session = os.path.join(SESSION_DIR, f"select_{username}.session")
+
+    if os.path.exists(source_session):
+        with open(source_session, "rb") as src, open(dest_session, "wb") as dst:
+            dst.write(src.read())
+    else:
+        print(horloge(), color(f"Aucune session trouvée pour {username}", "1;31"))
+        return None
+
     return user_data
 
 # ---------- Connexion Instagram ----------
@@ -86,21 +97,16 @@ def connexion_instagram():
         print(horloge(), color("Aucun compte sélectionné trouvé", "1;31"))
         return None
 
+    username = compte["username"]
+    session_path = os.path.join(SESSION_DIR, f"select_{username}.session")
     cl = IGClient()
     try:
+        cl.load_settings(session_path)
         cl.login(compte["username"], compte["password"])
-        print(horloge(), color(f"Connecté à Instagram : {compte['username']}", "1;32"))
+        print(horloge(), color(f"Connecté à Instagram : {username}", "1;32"))
         return cl
-    except ChallengeRequired:
-        print(horloge(), color("Challenge Required - Vérif. sur l'app", "1;31"))
-    except PleaseWaitFewMinutes:
-        print(horloge(), color("Trop de tentatives, patiente un moment...", "1;33"))
-    except FeedbackRequired:
-        print(horloge(), color("Blocage temporaire Instagram détecté", "1;31"))
-    except LoginRequired:
-        print(horloge(), color("Login requis. Mauvais mot de passe ?", "1;31"))
     except Exception as e:
-        print(horloge(), color(f"Erreur connexion : {str(e)}", "1;31"))
+        print(horloge(), color(f"Erreur Instagram : {str(e)}", "1;31"))
     return None
 
 # ---------- Extraire tâche ----------
@@ -114,8 +120,7 @@ def extraire_infos(msg):
 def extraire_id_depuis_lien(cl, lien, action):
     try:
         if "instagram.com/p/" in lien or "reel" in lien:
-            media_pk = cl.media_pk_from_url(lien)
-            return media_pk
+            return cl.media_pk_from_url(lien)
         elif "instagram.com/stories/" in lien:
             return cl.story_pk_from_url(lien)
         elif "instagram.com/" in lien and action == "follow":
