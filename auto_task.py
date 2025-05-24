@@ -29,7 +29,7 @@ os.makedirs(CONFIG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
+CONFIG_PATH = os.path.join(BASE_DIR, 'config.json')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
 
