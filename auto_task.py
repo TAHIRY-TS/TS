@@ -189,15 +189,7 @@ async def handler(event):
             await asyncio.sleep(3)
             return
 
-        if any(x in message.lower() for x in ["username for tasks", "choose account"]):
-            user = choisir_utilisateur_random()
-            if user:
-                print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
-                await event.respond(user["username"])
-                await asyncio.sleep(3)
-            return
-
-        if "your profile's username for tasks completing" in message.lower() or "⭕️ please choose account from the list" in message.lower():
+        if "▪️ Please give us your profile's username for tasks completing :" in message.lower() or "⭕️ please choose account from the list" in message.lower():
             user = choisir_utilisateur_random()
             if user:
                 print(horloge_prefix() + color(f"[→] Compte : {user['username']}", "1;36"))
