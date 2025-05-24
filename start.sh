@@ -1,5 +1,4 @@
 #!/bin/bash
-termux-setup-storage
 chmod +x *.sh
 chmod +x *.py
 clear
