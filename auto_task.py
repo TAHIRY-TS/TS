@@ -230,6 +230,13 @@ async def handle_message(event):
 async def main():
     print(f"{horloge()} Connexion en cours...")
     await client.start()
+    # Envoi du premier message pour démarrer les tâches
+    try:
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        print(horloge_prefix() + color("[✓] Connection reussie", "1;32"))
+    except Exception as e:
+        log_erreur(f"Erreur lors de l'envoi initial : {e}")
+
     await client.run_until_disconnected()
 
 if __name__ == "__main__":
