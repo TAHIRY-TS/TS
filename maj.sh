@@ -46,30 +46,42 @@ progress_bar() {
 # Entête
 clear
 
-# Texte sans codes ANSI pour calculer largeur réelle
-texte1="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
-texte2="┃      MAJ Automatique   $(horloge)      ┃"
-texte3="┃          Version $VERSION              ┃"
-texte4="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+# Largeur réelle du contenu (40 caractères à l'intérieur du cadre)
+LARGEUR_CONTENU=40
+
+# Contenus centrés
+center_text() {
+    local text="$1"
+    local len=${#text}
+    local padding=$(( (LARGEUR_CONTENU - len) / 2 ))
+    printf "%*s%s%*s" "$padding" "" "$text" "$((LARGEUR_CONTENU - len - padding))" ""
+}
+
+# Lignes sans couleurs
+ligne1="┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+ligne2="┃$(center_text "MAJ Automatique   $(horloge)")┃"
+ligne3="┃$(center_text "Version $VERSION")┃"
+ligne4="┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 
 # Largeur du terminal
 largeur=$(tput cols)
 
-# Fonction pour afficher une ligne centrée avec couleur
+# Fonction pour centrer une ligne colorée dans le terminal
 centrer_et_afficher() {
     local ligne="$1"
     local couleur="$2"
-    local longeur=${#ligne}
-    local gauche=$(( (largeur - longeur) / 2 ))
+    local longeur_pure=48 # longueur exacte des lignes avec bordures
+    local gauche=$(( (largeur - longeur_pure) / 2 ))
     printf "%*s" "$gauche" ""
     echo -e "${couleur}${ligne}${RESET}"
 }
 
 # Affichage
-centrer_et_afficher "$texte1" "$MAGENTA"
-centrer_et_afficher "$texte2" "$MAGENTA"
-centrer_et_afficher "$texte3" "$MAGENTA"
-centrer_et_afficher "$texte4" "$MAGENTA"
+centrer_et_afficher "$ligne1" "$MAGENTA"
+centrer_et_afficher "$ligne2" "$MAGENTA"
+centrer_et_afficher "$ligne3" "$MAGENTA"
+centrer_et_afficher "$ligne4" "$MAGENTA"
+
 echo -e "${JAUNE}\n[1] Mitahiry ireo doné rehetra...${RESET}"
 progress_bar && git stash > /dev/null
 
