@@ -152,12 +152,12 @@ menu_principal() {
             ;;
         *)
             echo -e "${ROUGE}Choix invalide. Veuillez réessayer.${RESET}"
+    sleep 2
+    menu_principal
             ;;
     esac
 
-    echo -e "${JAUNE}Retour au menu dans 5 secondes...${RESET}"
-    sleep 5
-    menu_principal
+    
 }
 
 # === Lancement ===
