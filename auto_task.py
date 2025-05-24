@@ -67,24 +67,32 @@ def choisir_utilisateur_random():
     if not fichiers:
         print(f"{horloge()} Aucun utilisateur trouvé dans {SESSION_DIR}")
         return None
+
     fichier_choisi = random.choice(fichiers)
-    chemin = os.path.join(SESSION_DIR, fichier_choisi)
-    with open(chemin, "r") as f:
-        user_data = json.load(f)
+    chemin_session = os.path.join(SESSION_DIR, fichier_choisi)
+
+    try:
+        with open(chemin_session, "r") as f:
+            user_data = json.load(f)
+    except Exception as e:
+        print(horloge(), color(f"Erreur lors de la lecture du fichier session : {e}", "1;31"))
+        return None
+
+    # Sauvegarde dans selected_user.json
     with open(SELECTED_USER_PATH, "w") as f:
         json.dump(user_data, f, indent=4)
 
-    username = user_data["username"]
-    source_session = os.path.join(f"{username}.session")
-    dest_session = os.path.join(f"select_{username}.session")
-
-    if os.path.exists(source_session):
-        with open(source_session, "rb") as src, open(dest_session, "wb") as dst:
+    # Copier le fichier session sous le nom select_<username>.session
+    username = user_data.get("username", "undefined_user")
+    dest_session = os.path.join(SESSION_DIR, f"select_{username}.session")
+    try:
+        with open(chemin_session, "rb") as src, open(dest_session, "wb") as dst:
             dst.write(src.read())
-    else:
-        print(horloge(), color(f"Aucune session trouvée pour {username}", "1;31"))
+    except Exception as e:
+        print(horloge(), color(f"Erreur lors de la copie de session : {e}", "1;31"))
         return None
 
+    print(horloge(), color(f"Utilisateur sélectionné : {username}"))
     return user_data
 
 # ---------- Connexion Instagram ----------
