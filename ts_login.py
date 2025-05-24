@@ -114,7 +114,10 @@ def main():
             for acc, reason in failed_accounts:
                 print(Fore.YELLOW + f"   - {acc} : {reason}")
 
-        exit()
-
+    print("OUVERTURE DU SCRIPT PRINCIPAL")
+    for i in range(3, 0, -1):
+        print(f"\033[1;36mRetour au script principal dans {i}...\033[0m", end='\r')
+        time.sleep(10)
+    os.execvp("python", ["python", os.path.join(PROJECT_DIR, "compte_manager.py")])
 if __name__ == "__main__":
     main()
