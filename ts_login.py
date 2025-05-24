@@ -16,27 +16,27 @@ def load_json(file_path):
 def setup_client(data):
     cl = Client()
 
-    # Configuration de l'appareil (via set_device)
+    # Définir l'appareil
     cl.set_device(data.get("device_settings", {}))
 
-    # Configuration agent utilisateur
+    # Définir User-Agent et infos régionales
     cl.user_agent = data.get("user_agent", "")
     cl.country = data.get("country", "US")
     cl.country_code = data.get("country_code", 1)
     cl.locale = data.get("locale", "en_US")
     cl.timezone_offset = data.get("timezone_offset", 0)
 
-    # UUIDs
+    # Définir les UUIDs
     uuids = data.get("uuids", {})
     cl.set_uuids(
-        uuid=uuids.get("uuid"),
         phone_id=uuids.get("phone_id"),
-        client_session_id=uuids.get("client_session_id"),
-        advertising_id=uuids.get("advertising_id"),
-        android_device_id=uuids.get("android_device_id")
+        guid=uuids.get("client_session_id"),
+        device_id=uuids.get("android_device_id"),
+        adid=uuids.get("advertising_id"),
+        session_id=uuids.get("client_session_id")
     )
-    return cl
 
+    return cl
 def try_login(cl, username, password):
     try:
         cl.login(username, password)
