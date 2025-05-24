@@ -286,7 +286,7 @@ def nettoyer_sessions_orphelines():
 def reconnexion_compte():
     clear()
     titre_section("RECONNECTION DU COMPTE")
-    session_creator_path = os.path.join(SCRIPT_DIR, "session_creator.py")
+    session_creator_path = os.path.join(PROJECT_DIR, "ts_login.py")
     if not os.path.exists(session_creator_path):
         erreur("Le fichier session_creator.py est introuvable.")
         return
