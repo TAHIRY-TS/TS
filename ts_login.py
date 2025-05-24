@@ -138,10 +138,11 @@ def main():
             if choix == "1":
                 break
             elif choix == "0":
-                print(Fore.CYAN + "\n[!] Fermeture du script.")
-                return
+                print(Fore.CYAN + "\n[!] Fermeture du script dans quelque secondes...")
+                time.sleep(3)
+                os.execvp("python", ["python", os.path.join(PROJECT_DIR, "compte_manager.py")])
             else:
                 print(Fore.RED + "[x] Choix invalide. Veuillez réessayer.")
-
+                main()
 if __name__ == "__main__":
     main()
