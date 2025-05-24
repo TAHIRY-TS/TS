@@ -244,11 +244,11 @@ def nettoyer_sessions_orphelines():
     titre_section("NETTOYAGE DES SESSIONS ORPHELINES")
 
     configs = [f.replace('.json', '') for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
-    sessions = [f for f in os.listdir(SESSION_DIR) if f.endswith('_session.json')]
+    sessions = [f for f in os.listdir(SESSION_DIR) if f.endswith('.session')]
 
     supprimés = 0
     for session_file in sessions:
-        username = session_file.replace('_session.json', '')
+        username = session_file.replace('.session', '')
         if username not in configs:
             try:
                 os.remove(os.path.join(SESSION_DIR, session_file))
@@ -263,7 +263,6 @@ def nettoyer_sessions_orphelines():
         info("\nAucune session orpheline.")
 
     safe_input("\nAppuyez sur Entrée pour revenir au menu...")
-
 def supprimer_compte():
     fichiers = lister_comptes()
     if not fichiers:
