@@ -1,4 +1,4 @@
-import os
+ import os
 import re
 import sys
 import json
@@ -376,5 +376,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print(horloge() + " [📴] Arrêt manuel vient le choix d'utilisateur, retour au menu dans 3 secondes...")
-        await asyncio.sleep(3)
         os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
