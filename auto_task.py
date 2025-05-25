@@ -330,23 +330,6 @@ attente_validation_compte = False
 current_user = None
 client_instagram = None
 
-async def demarrer_bot():
-    global current_user
-    print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
-    prepare_sessions_depuis_json()
-    afficher_blacklist()
-
-    current_user = choisir_utilisateur_random_depuis_sessions_json()
-    if not current_user:
-        print(horloge(), color("🚫 Aucun compte disponible", "1;31"))
-        return
-
-    print(horloge(), color(f"[♻️] Compte initial sélectionné : {current_user['username']}", "1;36"))
-
-    print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
-    await client.start()
-    await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-    await client.run_until_disconnected()
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
