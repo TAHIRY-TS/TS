@@ -329,8 +329,25 @@ async def main():
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
+    msg = event.raw_text.lower()
+
+    # 1. Gestion des cas spécifiques AVANT le traitement principal
+    if "no active tasks" in msg:
+        print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        await asyncio.sleep(3)
+        return
+
+    if "profile's username for tasks" in msg or "choose account from the list" in msg or "limited" in msg:
+        user = choisir_utilisateur_random_depuis_sessions_json()
+        if user:
+            print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {user['username']}", "1;36"))
+            await event.respond(user["username"])
+            await asyncio.sleep(3)
+        return
+
+    # 2. Traitement principal
     try:
-        msg = event.raw_text
         lien, action = extraire_infos(msg)
 
         if not lien or not action:
@@ -349,7 +366,8 @@ async def handler(event):
             await event.delete()
             return
 
-        print(horloge_prefix() + color(f"[DEBUG] Lien : {lien} | Action : {action}", "1;36"))
+        print(horloge_prefix() + color(f"[🛂] Action : {action}", "1;36"))
+        print(horloge_prefix() + color(f"[🌍] Lien : {lien}", "1;33"))
         effectuer_action(cl, action, id_cible)
         await event.respond("✅Completed")
         print(horloge_prefix() + color(f"[✅] Tâche réussie", "1;36"))
