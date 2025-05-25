@@ -360,13 +360,13 @@ async def handler(event):
         montant = match.group(1) if match else "???"
         print(horloge_prefix() + color(f"💸 My Balance : **{montant}** **cashCoins**", "1;36"))
         await asyncio.sleep(3)
-        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        await client.respond("📝Tasks📝")
         return
 
-    if "no active tasks" in msg:
+    if "⭕️ Sorry, but there are no active tasks at the moment." in msg:
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
         await asyncio.sleep(5)
-        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        await client.respond("instagram")
         return
 
     if "▪️ Please give us your profile's username for tasks completing :" in msg or "Choose account from the list" in msg or "limited" in msg:
