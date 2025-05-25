@@ -321,12 +321,6 @@ def effectuer_action(cl, action, id_cible):
         log_erreur(f"[Action Error] {e}")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
 
-# ---------- Logs ----------
-
-def log_erreur(txt):
-    with open(ERROR_LOG, "a") as f:
-        f.write(f"{datetime.now().isoformat()} - {txt}\n")
-
 # ---------- Main Async Loop ----------
 
 async def main():
@@ -344,22 +338,34 @@ async def main():
     if not cl:
         print(horloge(), color("⛔ Impossible de se connecter à Instagram", "1;31"))
         return
+
     print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
     await client.start()
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-    # gest mess
+
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
-    msg = event.raw_text.lower()
+    msg_raw = event.raw_text
+    msg = msg_raw.lower()
 
-    # 1. Gestion des cas spécifiques AVANT le traitement principal
-    if "Choose social network :" in msg:
-        print(horloge_prefix() + color("[🎯] Instagram", "1;33"))
-        await client.send_message("SmmKingdomTasksBot", "instagram")
+    # 1. Cas spécifiques simples
+
+    if "choose social network :" in msg or "all conditions are met?" in msg:
+        print(horloge_prefix() + color("[🎯] Sélection du réseau : Instagram", "1;33"))
+        await event.respond("instagram")
         await asyncio.sleep(3)
         return
-        
+
+    if "💸 my balance" in msg:
+        # Extraction du montant
+        match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
+        montant = match.group(1) if match else "???"
+        print(horloge_prefix() + color(f"💸 My Balance : **{montant}** **cashCoins**", "1;36"))
+        await asyncio.sleep(2)
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        return
+
     if "no active tasks" in msg:
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
@@ -406,8 +412,9 @@ async def handler(event):
         log_erreur(f"[Handler Error] {e}")
         print(horloge_prefix() + color(f"[⛔] Erreur Handler : {e}", "1;31"))
         afficher_blacklist()
-        await client.run_until_disconnected()           
-    
+        await client.run_until_disconnected()
+
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
