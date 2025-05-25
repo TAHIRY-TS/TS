@@ -335,13 +335,13 @@ async def main():
                 return
 
             effectuer_action(cl, action, id_cible)
-               if cl:
-                    id_cible = extraire_id_depuis_lien(cl, lien, action)
-                    if id_cible:
-                        effectuer_action(cl, action, id_cible)
-                        await event.respond("✅ Completed")
-                        await asyncio.sleep(3)
-                        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+            if cl:
+                id_cible = extraire_id_depuis_lien(cl, lien, action)
+                if id_cible:
+                    effectuer_action(cl, action, id_cible)
+                    await event.respond("✅ Completed")
+                    await asyncio.sleep(3)
+                    await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
         elif "no active tasks" in message.lower():
             print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
