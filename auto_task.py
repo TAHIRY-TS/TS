@@ -254,9 +254,9 @@ def extraire_infos(msg):
 def extraire_id_depuis_lien(cl, lien, action):
     try:
         if "instagram.com/p/" in lien or "reel" in lien:
-            media_id = cl.media_id(cl.media_pk_from_url(lien))
-    except Exception as e:  
+            media_id = cl.media_id(cl.media_pk_from_url(lien))  
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
+        except Exception as e:
             return media_id
                 
         elif "instagram.com/stories/" in lien:
