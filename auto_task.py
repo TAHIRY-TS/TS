@@ -255,31 +255,23 @@ def extraire_id_depuis_lien(cl, lien, action):
     try:
         lien = lien.lower()
 
-        if "instagram.com/p/" in lien or "instagram.com/reel/" in lien:
-            media_pk = cl.media_pk_from_url(lien)
-            media_id = cl.media_id(media_pk)
-            print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
-            return media_id
-
-        elif "instagram.com/stories/" in lien:
-            username_story = lien.split("/")[4]
-            user = cl.user_info_by_username(username_story)
-            print(horloge_prefix() + color(f"[ID] Story User ID : {user.pk}", "1;34"))
-            return user.pk
-
-        elif "instagram.com/" in lien and action == "follow":
-            username = lien.split("/")[3]
-            user = cl.user_info_by_username(username)
-            print(horloge_prefix() + color(f"[ID] Follow User ID : {user.pk}", "1;34"))
-            return user.pk
-
-        else:
-            print(horloge_prefix() + color("[Erreur ID] Lien non reconnu.", "1;31"))
-            return None
-
+        if action in ['like', 'comment', 'video view', 'story view']:
+            if "instagram.com/p/" in lien or "instagram.com/reel/" in lien:
+                media_pk = cl.media_pk_from_url(lien)
+                return media_pk
+            elif "instagram.com/stories/" in lien:
+                # Extraction d'ID pour Story View
+                username = lien.split("stories/")[1].split("/")[0]
+                user_id = cl.user_id_from_username(username)
+                return user_id  # Pour stories, retourne le user_id
+        elif action == 'follow':
+            if "instagram.com/" in lien:
+                username = lien.rstrip("/").split("/")[-1]
+                user_id = cl.user_id_from_username(username)
+                return user_id
+        return None
     except Exception as e:
-        log_erreur(f"[Erreur extraction ID] {e}")
-        print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
+        print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
 def effectuer_action(cl, action, id_cible):
     try:
