@@ -320,7 +320,10 @@ def effectuer_action(cl, action, id_cible):
     except Exception as e:
         log_erreur(f"[Action Error] {e}")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
-
+# ----------------log-----------------
+def log_erreur(message):
+    with open(ERROR_LOG, "a") as f:
+        f.write(f"{horloge()} {message}\n")
 # ---------- Main Async Loop ----------
 
 current_user = None  # Pour mémoriser l'utilisateur utilisé pendant l'action
@@ -397,7 +400,7 @@ async def handler(event):
         if not current_user:
             current_user = choisir_utilisateur_random_depuis_sessions_json()
 
-        cl = connexion_instagram(current_user)
+        cl = connexion_instagram()
         if not cl:
             print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
             return
