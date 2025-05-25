@@ -354,6 +354,12 @@ async def handler(event):
     msg = event.raw_text.lower()
 
     # 1. Gestion des cas spécifiques AVANT le traitement principal
+    if "Choose social network :" in msg:
+        print(horloge_prefix() + color("[🎯] Instagram", "1;33"))
+        await client.send_message("SmmKingdomTasksBot", "instagram")
+        await asyncio.sleep(3)
+        return
+        
     if "no active tasks" in msg:
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
