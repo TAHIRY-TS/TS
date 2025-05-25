@@ -258,9 +258,9 @@ def extraire_id_depuis_lien(cl, lien, action):
             media_id = media_info.pk
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
     
-        except Exception as e:
-            print(f"{horloge()} Erreur : {e}")
-            return media_id
+    except Exception as e:
+        print(f"{horloge()} Erreur : {e}")
+        return media_id
                 
         elif "instagram.com/stories/" in lien:
             username_story = lien.split("/")[4]
