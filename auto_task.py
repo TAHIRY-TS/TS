@@ -103,7 +103,7 @@ except:
    - API_ID
    - API_HASH
    Copiez ces deux valeurs et entrez-les ci-dessous.
-    """)
+    """
     url = "https://my.telegram.org"
     webbrowser.open(url)
     print(f"{horloge()} Veuillez entrer vos identifiants Telegram")
@@ -252,8 +252,7 @@ def connexion_instagram():
                     cl.uuid = compte[key]
                 elif key == "uuids":
                     cl.uuids = compte[key]
-                elif key == "cookies":
-                    cl.set_cookies(compte[key])
+                
     except Exception as e:
         print(horloge(), color(f"Erreur lors de la configuration avancée IG : {e}", "1;31"))
 
