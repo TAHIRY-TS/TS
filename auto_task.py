@@ -349,17 +349,17 @@ async def handler(event):
     msg_raw = event.raw_text
     msg = msg_raw.lower()
 
-    if "Choose social network :" in msg or "all conditions are met?" in msg:
+    if "Choose social network :" in msg or "All conditions are met?" in msg:
         print(horloge_prefix() + color("[🎯] Sélection du réseau : Instagram", "1;33"))
         await event.respond("instagram")
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
         return
 
     if "💸 My balance" in msg:
         match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
         montant = match.group(1) if match else "???"
         print(horloge_prefix() + color(f"💸 My Balance : **{montant}** **cashCoins**", "1;36"))
-        await asyncio.sleep(4)
+        await asyncio.sleep(3)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
@@ -369,12 +369,12 @@ async def handler(event):
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
-    if "profile's username for tasks" in msg or "choose account from the list" in msg or "limited" in msg:
+    if "▪️ Please give us your profile's username for tasks completing :" in msg or "Choose account from the list" in msg or "limited" in msg:
         user = choisir_utilisateur_random_depuis_sessions_json()
         if user:
             print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {user['username']}", "1;36"))
             await event.respond(user["username"])
-            await asyncio.sleep(4)
+            await asyncio.sleep(5)
         return
 
     try:
