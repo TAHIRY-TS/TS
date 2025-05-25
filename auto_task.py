@@ -319,7 +319,7 @@ async def main():
     # gest mess
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
-async def handler(event)
+async def handler(event):
     try:
         msg = event.raw_text
         lien, action = extraire_infos(msg)
