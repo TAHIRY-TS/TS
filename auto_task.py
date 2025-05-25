@@ -298,56 +298,74 @@ def log_erreur(txt):
 # ---------- Main Async Loop ----------
 
 async def main():
-    print(horloge(), color("Préparation des sessions Instagram depuis fichiers JSON...", "1;33"))
+    print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
     prepare_sessions_depuis_json()
 
     afficher_blacklist()
 
     compte = choisir_utilisateur_random_depuis_sessions_json()
     if not compte:
-        print(horloge(), color("Aucun compte disponible pour démarrer", "1;31"))
+        print(horloge(), color("🚫 Aucun compte disponible pour démarrer", "1;31"))
         return
 
     cl = connexion_instagram()
     if not cl:
-        print(horloge(), color("Impossible de se connecter à Instagram", "1;31"))
+        print(horloge(), color("⛔ Impossible de se connecter à Instagram", "1;31"))
         return
-
+    print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
     await client.start()
-    print(horloge(), color("Bot Telegram prêt.", "1;32"))
-
+    await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+    await asyncio.sleep(3)
+    # gest mess
+    
     @client.on(events.NewMessage(pattern=r'Follow the profile|Like the post|Story View|Comment|Video View', chats='SmmKingdomTasksBot'))
     async def handler(event):
         try:
             msg = event.raw_text
-            print(horloge_prefix() + color(f"Message reçu : {msg}", "1;34"))
-
             lien, action = extraire_infos(msg)
             if not lien or not action:
-                print(horloge_prefix() + color("Aucune tâche valide détectée.", "1;33"))
+                print(horloge_prefix() + color("❗Aucune tâche valide détectée.", "1;33"))
                 await event.delete()
                 return
 
             id_cible = extraire_id_depuis_lien(cl, lien, action)
             if not id_cible:
-                print(horloge_prefix() + color("Impossible d'extraire l'ID cible.", "1;31"))
+                print(horloge_prefix() + color("⛔ Impossible d'extraire l'ID cible.", "1;31"))
                 await event.delete()
                 return
 
             effectuer_action(cl, action, id_cible)
+               if cl:
+                    id_cible = extraire_id_depuis_lien(cl, lien, action)
+                    if id_cible:
+                        effectuer_action(cl, action, id_cible)
+                        await event.respond("✅ Completed")
+                        await asyncio.sleep(3)
+                        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
-            # Supprimer le message pour garder le terminal propre
-            await event.delete()
+        elif "no active tasks" in message.lower():
+            print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
+            await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
-        except Exception as e:
-            log_erreur(f"[Handler Error] {e}")
-            print(horloge_prefix() + color(f"Erreur dans le handler : {e}", "1;31"))
+        elif any(x in message.lower() for x in ["profile's username", "choose account", "limited"]):
+            user = choisir_utilisateur_random()
+            if user:
+                await event.respond(user["username"])
+                print(horloge_prefix() + color("➡️ Utilisateur:(user["username"])", "1;32"))
+                await asyncio.sleep(3)
 
-    print(horloge(), color("En attente des messages du bot SmmKingdomTasksBot...", "1;32"))
-    await client.run_until_disconnected()
+    except Exception as e:
+        log_erreur(f"[Handler Error] {e}")
+        print(horloge_prefix() + color(f"[⛔ Erreur Handler] {e}", "1;31"))
 
+    print(horloge_prefix() + color("✅ Connecté et prêt", "1;32"))
+    afficher_blacklist()
+    await client.run_until_disconnected()           
+    
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print(horloge(), color("Arrêt manuel par l'utilisateur.", "1;33"))
+        print(horloge() + " Arrêt manuel vient le choix d'utilisateur, retour au menu dans 3 secondes...")
+        await asyncio.sleep(3)
+        os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
