@@ -254,31 +254,26 @@ def extraire_infos(msg):
 def extraire_id_depuis_lien(cl, lien, action):
     try:
         if "instagram.com/p/" in lien or "reel" in lien:
-            media_id = cl.media_id(cl.media_pk_from_url(lien))
-            media_id = media_info.pk
+            media_pk = cl.media_pk_from_url(lien)
+            media_id = cl.media_id(media_pk)
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
-    
-    except Exception as e:
-        log_erreur(f"[Erreur extraction ID reel] {e}")
-        print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
-        return media_id
-    try:      
-        if "instagram.com/stories/" in lien:
+            return media_id
+
+        elif "instagram.com/stories/" in lien:
             username_story = lien.split("/")[4]
             user = cl.user_info_by_username(username_story)
             print(horloge_prefix() + color(f"[ID] Story User ID : {user.pk}", "1;34"))
             return user.pk
-    
-    except Exception as e:
-        log_erreur(f"[Erreur extraction ID stories] {e}")
-        print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
-        return None
-    try:
-        if "instagram.com/" in lien and action == "follow":
+
+        elif "instagram.com/" in lien and action == "follow":
             username = lien.split("/")[3]
             user = cl.user_info_by_username(username)
             print(horloge_prefix() + color(f"[ID] Follow User ID : {user.pk}", "1;34"))
             return user.pk
+
+        else:
+            print(horloge_prefix() + color("[Erreur ID] Lien non reconnu.", "1;31"))
+            return None
 
     except Exception as e:
         log_erreur(f"[Erreur extraction ID] {e}")
