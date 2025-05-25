@@ -91,8 +91,13 @@ try:
 except:
     titre_section("OBTENIR VOTRE API_ID ET API_HASH")
 
-    print(horloge_prefix() + color("Mety tsy tafavoaka enao eee?🥰 aza manahy araho ireto\n"))"""
-1. Rendez-vous sur https://my.telegram.org
+    print(horloge_prefix() + color("Mety tsy tafavoaka enao eee?🥰 aza manahy araho ireto\n"))
+    # Affichage avec couleurs ANSI dans Termux
+gris_sombre = "\033[1;30m"
+jaune = "\033[1;33m"
+reset = "\033[0m"
+
+message = f"""{gris_sombre}(1. Rendez-vous sur {jaune}https://my.telegram.org{gris_sombre}
 2. Connectez-vous avec votre numéro de téléphone telegram.
 3. Cliquez sur 'API Development Tools'
 4. Remplissez :
@@ -102,8 +107,10 @@ except:
 5. Vous verrez :
    - API_ID
    - API_HASH
-   Copiez ces deux valeurs et entrez-les ci-dessous.
-    """
+   Copiez ces deux valeurs et entrez-les ci-dessous.){reset}"""
+
+print(message)
+
     url = "https://my.telegram.org"
     webbrowser.open(url)
     print(f"{horloge()} Veuillez entrer vos identifiants Telegram")
