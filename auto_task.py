@@ -353,8 +353,8 @@ async def handler(event):
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
         else:
             print(horloge_prefix() + color("[⚠️] Tâche invalide extraite", "1;33"))
-    else:
-        print(horloge_prefix() + color("[⚠️] Probleme de donnés incompatible", "1;33"))
+    except:
+        print(horloge_prefix() + color("[⚠️] Probleme des donnés incompatible", "1;33"))
         
     elif "no active tasks" in message.lower():
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
