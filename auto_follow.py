@@ -17,6 +17,30 @@ SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 
 os.makedirs(SESSION_DIR, exist_ok=True)
+def titre_section(titre):
+    if os.path.exists(LOGO_PATH):
+        subprocess.call(['bash', LOGO_PATH])
+    else:
+        print("\033[1;33m[AVERTISSEMENT]\033[0m Logo non trouvé.")
+
+    largeur = 50
+    terminal_width = shutil.get_terminal_size().columns
+    padding = max((terminal_width - largeur) // 2, 0)
+    spaces = ' ' * padding
+
+    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
+    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
+    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
+
+def titre_section1(titre):
+    largeur = 50
+    terminal_width = shutil.get_terminal_size().columns
+    padding = max((terminal_width - largeur) // 2, 0)
+    spaces = ' ' * padding
+
+    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
+    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
+    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
 
 def load_json(path):
     return json.load(open(path)) if os.path.exists(path) else {}
@@ -113,10 +137,11 @@ def enregistrer_rapport(activites):
     print(f"{C}[✓] Rapport enregistré dans {REPORT_PATH}{W}")
 
 def menu():
-    print(f"{C}--- MENU ---{W}")
-    print(f"{Y}1.{W} Auto-Follow")
+    titre_section("AUTO-FOLLOW-PUB By TS")
+    print(f"{Y}\n1.{W} Auto-Follow")
     print(f"{Y}2.{W} Publication d'image")
-    return input(f"{C}Votre choix (1 ou 2) : {W}").strip()
+    print(f"{Y}0.{W} Quiter")
+    return input(f"{C}\n\nVotre choix (1 ou 2) : {W}").strip()
 
 if __name__ == "__main__":
     activites = []
@@ -130,7 +155,8 @@ if __name__ == "__main__":
     comptes_utilises = choisir_comptes(comptes_dispo)
 
     if choix == "1":
-        lien = input(f"{Y}Lien du profil à suivre : {W}").strip()
+        titre_section1("FOLLOW AUTO")
+        lien = input(f"{Y}\nLien du profil à suivre : {W}").strip()
         cible = extraire_username_depuis_lien(lien)
         if not cible:
             print(f"{R}[!] Utilisateur invalide.{W}")
@@ -153,7 +179,8 @@ if __name__ == "__main__":
                 activites.append(f"{username} → ECHEC CONNEXION")
 
     elif choix == "2":
-        n_img = int(input(f"{Y}Combien d'images publier par compte ? {W}"))
+        titre_section1("PUBLICATION AUTO")
+        n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
             client = login_avec_settings(data)
             if client:
@@ -166,3 +193,4 @@ if __name__ == "__main__":
         exit()
 
     enregistrer_rapport(activites)
+    return menu()
