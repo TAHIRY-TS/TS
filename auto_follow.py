@@ -190,16 +190,17 @@ if __name__ == "__main__":
                 activites.append(f"{username} → ECHEC CONNEXION")
     else:
         print(f"{R}[!] Choix invalide.{W}")
-        exit()
-
-    enregistrer_rapport(activites)
-    return menu()
-    elif choix == '0':
-             for i in range(3, 0, -1):
-                print(f"\033[1;36mRetour à l'accueil dans {i} secondes ...\033[0m", end='\r')
-                time.sleep(3)
-                os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
+        safe_input("\nAppuyez sur Entrée...")
+        return menu()
+    
+    elif choix == "0":
+        for i in range(3, 0, -1):
+            print(f"\033[1;36mRetour à l'accueil dans {i} secondes ...\033[0m", end='\r')
+            time.sleep(3)
+            os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")]) 
         else:
             erreur("Choix invalide.")
             safe_input("\nAppuyez sur Entrée...")
-
+    
+    enregistrer_rapport(activites)
+    return menu()
