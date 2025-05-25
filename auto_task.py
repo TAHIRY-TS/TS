@@ -354,11 +354,7 @@ async def handler(event):
     msg_raw = event.raw_text
     msg = msg_raw.lower()
 
-    if "choose social network" in msg or "all conditions are met?" in msg:
-        print(horloge_prefix() + color("[🎯] Sélection du réseau : Instagram", "1;33"))
-        await event.respond("instagram")
-        await asyncio.sleep(5)
-        return
+    
 
     if "💸 my balance" in msg:
         match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
