@@ -263,7 +263,7 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
         return media_id
                 
-        elif "instagram.com/stories/" in lien:
+        if "instagram.com/stories/" in lien:
             username_story = lien.split("/")[4]
             user = cl.user_info_by_username(username_story)
             print(horloge_prefix() + color(f"[ID] Story User ID : {user.pk}", "1;34"))
@@ -274,7 +274,7 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
         return None
     
-        elif "instagram.com/" in lien and action == "follow":
+        if "instagram.com/" in lien and action == "follow":
             username = lien.split("/")[3]
             user = cl.user_info_by_username(username)
             print(horloge_prefix() + color(f"[ID] Follow User ID : {user.pk}", "1;34"))
