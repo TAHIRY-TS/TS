@@ -257,11 +257,10 @@ def extraire_id_depuis_lien(cl, lien, action):
             media_id = cl.media_id(cl.media_pk_from_url(lien))
             media_id = media_info.pk
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
-    try:
-        resultat = 1 / 0
-    except Exception as e:
-        print(f"{horloge()} Erreur : {e}")
-        return media_id
+    
+        except Exception as e:
+            print(f"{horloge()} Erreur : {e}")
+            return media_id
                 
         elif "instagram.com/stories/" in lien:
             username_story = lien.split("/")[4]
@@ -361,9 +360,7 @@ async def handler(event):
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
         else:
             print(horloge_prefix() + color("[⚠️] Tâche invalide extraite", "1;33"))
-    except:
-        print(horloge_prefix() + color("[⚠️] Probleme des donnés incompatible", "1;33"))
-        
+            
     elif "no active tasks" in message.lower():
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
