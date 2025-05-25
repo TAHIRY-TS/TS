@@ -10,7 +10,7 @@ G, R, Y, C, W = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m'
 
 # Dossiers
 BASE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = os.path.join(BASE, 'config')
+CONFIG_DIR = BASE_DIR
 IMAGE_DIR = os.path.join(BASE, 'images')
 SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
