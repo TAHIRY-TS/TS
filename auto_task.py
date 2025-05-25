@@ -316,7 +316,6 @@ async def main():
     print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
     await client.start()
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-    await asyncio.sleep(3)
     # gest mess
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
