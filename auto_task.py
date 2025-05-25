@@ -105,7 +105,7 @@ def prepare_sessions_depuis_json():
             username = compte.get("username")
             password = compte.get("password")
             if not username or not password:
-                print(horloge(), color(f"Fichier {fichier} incomplet (username/password manquant)", "1;31"))
+                print(horloge(), color(f"⛔ Fichier {fichier} incomplet (username/password manquant)", "1;31"))
                 continue
 
             session_path = os.path.join(SESSION_DIR, f"{username}.session")
@@ -343,16 +343,17 @@ async def main():
                     await asyncio.sleep(3)
                     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
-        elif "no active tasks" in message.lower():
-            print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
-            await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+           if "no active tasks" in message.lower():
+               print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
+               await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+               await asyncio.sleep(3)
 
-        elif any(x in message.lower() for x in ["profile's username", "choose account", "limited"]):
-            user = choisir_utilisateur_random()
-            if user:
-                await event.respond(user["username"])
-                print(horloge_prefix() + color("➡️ Utilisateur:(user["username"])", "1;32"))
-                await asyncio.sleep(3)
+           if any(x in message.lower() for x in ["profile's username", "choose account", "limited"]):
+               user = choisir_utilisateur_random_depuis_sessions_json()
+               if user:
+                   await event.respond(user["username"])
+                   print(horloge_prefix() + color("➡️ Utilisateur:(user["username"])", "1;32"))
+                   await asyncio.sleep(3)
 
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
