@@ -24,6 +24,16 @@ def horloge():
 def horloge_prefix():
     return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
 
+def titre_section(titre):
+    largeur = 50
+    terminal_width = shutil.get_terminal_size().columns
+    padding = max((terminal_width - largeur) // 2, 0)
+    spaces = ' ' * padding
+    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
+    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
+    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
+
+
 # ---------- Répertoires ----------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
