@@ -321,12 +321,17 @@ def effectuer_action(cl, action, id_cible):
         log_erreur(f"[Action Error] {e}")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
 
+import asyncio
+import os
+import re
+import time
+from telethon import events
+
 # ---------- Main Async Loop ----------
 
-async def main():
+async def demarrer_bot():
     print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
     prepare_sessions_depuis_json()
-
     afficher_blacklist()
 
     compte = choisir_utilisateur_random_depuis_sessions_json()
@@ -342,14 +347,13 @@ async def main():
     print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
     await client.start()
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+    await client.run_until_disconnected()  # reste actif tant que connecté
 
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
     msg_raw = event.raw_text
     msg = msg_raw.lower()
-
-    # 1. Cas spécifiques simples
 
     if "choose social network :" in msg or "all conditions are met?" in msg:
         print(horloge_prefix() + color("[🎯] Sélection du réseau : Instagram", "1;33"))
@@ -358,7 +362,6 @@ async def handler(event):
         return
 
     if "💸 my balance" in msg:
-        # Extraction du montant
         match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
         montant = match.group(1) if match else "???"
         print(horloge_prefix() + color(f"💸 My Balance : **{montant}** **cashCoins**", "1;36"))
@@ -368,8 +371,8 @@ async def handler(event):
 
     if "no active tasks" in msg:
         print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
+        await asyncio.sleep(5)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-        await asyncio.sleep(3)
         return
 
     if "profile's username for tasks" in msg or "choose account from the list" in msg or "limited" in msg:
@@ -380,7 +383,6 @@ async def handler(event):
             await asyncio.sleep(3)
         return
 
-    # 2. Traitement principal
     try:
         lien, action = extraire_infos(msg)
 
@@ -412,12 +414,17 @@ async def handler(event):
         log_erreur(f"[Handler Error] {e}")
         print(horloge_prefix() + color(f"[⛔] Erreur Handler : {e}", "1;31"))
         afficher_blacklist()
-        await client.run_until_disconnected()
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print(horloge() + " [📴] Arrêt manuel vient le choix d'utilisateur, retour au menu dans 3 secondes...")
-        os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
+    while True:
+        try:
+            asyncio.run(demarrer_bot())
+        except KeyboardInterrupt:
+            print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
+            time.sleep(3)
+            os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
+        except Exception as e:
+            log_erreur(f"[MAIN LOOP ERROR] {e}")
+            print(horloge() + color(f"⚠️ Redémarrage du bot après erreur : {e}", "1;33"))
+            time.sleep(5)  # Pause avant redémarrage
