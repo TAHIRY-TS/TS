@@ -342,18 +342,18 @@ async def main():
                     await event.respond("✅ Completed")
                     await asyncio.sleep(3)
                     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+                    
+        if "no active tasks" in message.lower():
+            print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
+            await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+            await asyncio.sleep(3)
 
-           if "no active tasks" in message.lower():
-               print(horloge_prefix() + color("⚠️ Aucune tâche disponible", "1;33"))
-               await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-               await asyncio.sleep(3)
-
-           if any(x in message.lower() for x in ["profile's username", "choose account", "limited"]):
-               user = choisir_utilisateur_random_depuis_sessions_json()
-               if user:
-                   await event.respond(user["username"])
-                   print(horloge_prefix() + color("➡️ Utilisateur:(user["username"])", "1;32"))
-                   await asyncio.sleep(3)
+        if any(x in message.lower() for x in ["profile's username", "choose account", "limited"]):
+            user = choisir_utilisateur_random_depuis_sessions_json()
+            if user:
+                await event.respond(user["username"])
+                print(horloge_prefix() + color("➡️ Utilisateur:(user["username"])", "1;32"))
+                await asyncio.sleep(3)
 
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
