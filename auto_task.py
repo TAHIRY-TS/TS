@@ -332,53 +332,35 @@ async def handler(event):
     try:
         msg = event.raw_text
         lien, action = extraire_infos(msg)
+
         if not lien or not action:
             print(horloge_prefix() + color("❗Aucune tâche valide détectée.", "1;33"))
             await event.delete()
             return
-            
+
+        cl = connexion_instagram()
+        if not cl:
+            print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
+            return
+
         id_cible = extraire_id_depuis_lien(cl, lien, action)
         if not id_cible:
             print(horloge_prefix() + color("⛔ Impossible d'extraire l'ID cible.", "1;31"))
             await event.delete()
             return
 
-    if "instagram.com/" in message.lower():
-        lien, action = extraire_infos(message)
         print(horloge_prefix() + color(f"[DEBUG] Lien : {lien} | Action : {action}", "1;36"))
-        if lien and action:
-            cl = connexion_instagram()
-            if cl:
-                id_cible = extraire_id_depuis_lien(cl, lien, action)
-                if id_cible:
-                    effectuer_action(cl, action, id_cible)
-                    await event.respond("✅Completed")
-                    print(horloge_prefix() + color(f"[✅] Tache sucée : {user['username']}", "1;36"))
-                    await asyncio.sleep(3)
-                    await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-                else:
-                    print(horloge_prefix() + color("[⚠️] ID cible introuvable", "1;33"))
-            else:
-                print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
-        else:
-            print(horloge_prefix() + color("[⚠️] Tâche invalide extraite", "1;33"))
-            
-    elif "no active tasks" in message.lower():
-        print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
-        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+        effectuer_action(cl, action, id_cible)
+        await event.respond("✅Completed")
+        print(horloge_prefix() + color(f"[✅] Tâche réussie", "1;36"))
         await asyncio.sleep(3)
-            
-    elif "profile's username for tasks" in message.lower() or "choose account from the list" in message.lower() or "Current status of this account is Limited." in message.lower():
-        user = choisir_utilisateur_random_depuis_sessions_json()
-        if user:
-            print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {user['username']}", "1;36"))
-            await event.respond(user["username"])
-            await asyncio.sleep(3)
-except Exception as e:
-    log_erreur(f"[Handler Error] {e}")
-    print(horloge_prefix() + color(f"[⛔] Erreur Handler] {e}", "1;31"))
-    afficher_blacklist()
-    await client.run_until_disconnected()           
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+
+    except Exception as e:
+        log_erreur(f"[Handler Error] {e}")
+        print(horloge_prefix() + color(f"[⛔] Erreur Handler : {e}", "1;31"))
+        afficher_blacklist()
+        await client.run_until_disconnected()           
     
 if __name__ == "__main__":
     try:
