@@ -8,7 +8,7 @@ pkg update -y && pkg upgrade -y
 
 # Installation des bibliothèques Python
 pip install --upgrade pip
-pip install telethon colorama pillow termcolor requests instagrapi
+pip install telethon colorama pillow termcolor requests instagrapi tabulate
 
 # Autorisation d'accès au stockage
 termux-setup-storage
