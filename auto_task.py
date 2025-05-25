@@ -253,7 +253,9 @@ def extraire_infos(msg):
 
 def extraire_id_depuis_lien(cl, lien, action):
     try:
-        if "instagram.com/p/" in lien or "reel" in lien:
+        lien = lien.lower()
+
+        if "instagram.com/p/" in lien or "instagram.com/reel/" in lien:
             media_pk = cl.media_pk_from_url(lien)
             media_id = cl.media_id(media_pk)
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
@@ -279,7 +281,6 @@ def extraire_id_depuis_lien(cl, lien, action):
         log_erreur(f"[Erreur extraction ID] {e}")
         print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
         return None
-
 def effectuer_action(cl, action, id_cible):
     try:
         if action == "follow":
