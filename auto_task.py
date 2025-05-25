@@ -170,9 +170,8 @@ def prepare_sessions_depuis_json():
             if "uuids" in params:
                 cl.uuids = params["uuids"]
             if "cookies" in params:
-
-            cl.login(username, password)
-            cl.dump_settings(session_path)
+                cl.login(username, password)
+                cl.dump_settings(session_path)
 
             # Mise à jour du fichier JSON avec les settings actuels pour la prochaine connexion
             compte["settings"] = cl.get_settings()
