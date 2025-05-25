@@ -131,9 +131,9 @@ def get_android_device_info():
         "tray_session_id": str(uuid.uuid4())
     }
 
-    "mid": generate_mid(),
-    "ig_u_rur": None,
-    "ig_www_claim": "0",
+    mid = generate_mid(),
+    ig_u_rur = None,
+    ig_www_claim = "0",
     authorization_data = {
             "ds_user_id": str(uuid.uuid4().int)[:11],
             "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
