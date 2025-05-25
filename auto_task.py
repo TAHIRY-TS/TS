@@ -255,18 +255,22 @@ def extraire_id_depuis_lien(cl, lien, action):
     try:
         if "instagram.com/p/" in lien or "reel" in lien:
             media_id = cl.media_id(cl.media_pk_from_url(lien))
+    except Exception as e:  
             print(horloge_prefix() + color(f"[ID] Media ID : {media_id}", "1;34"))
             return media_id
+                
         elif "instagram.com/stories/" in lien:
             username_story = lien.split("/")[4]
             user = cl.user_info_by_username(username_story)
             print(horloge_prefix() + color(f"[ID] Story User ID : {user.pk}", "1;34"))
             return user.pk
+    
         elif "instagram.com/" in lien and action == "follow":
             username = lien.split("/")[3]
             user = cl.user_info_by_username(username)
             print(horloge_prefix() + color(f"[ID] Follow User ID : {user.pk}", "1;34"))
             return user.pk
+
     except Exception as e:
         log_erreur(f"[Erreur extraction ID] {e}")
         print(horloge_prefix() + color(f"[Erreur ID] {e}", "1;31"))
