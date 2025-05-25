@@ -326,8 +326,9 @@ def log_erreur(message):
     with open(ERROR_LOG, "a") as f:
         f.write(f"{horloge()} {message}\n")
 # ---------- Main Async Loop ----------
-
+attente_validation_compte = False  # Nouvelle variable de contrôl
 current_user = None  # Pour mémoriser l'utilisateur utilisé pendant l'action
+
 async def demarrer_bot():
     global current_user
     print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
@@ -351,10 +352,9 @@ async def demarrer_bot():
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
     await client.run_until_disconnected()
 
-
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
-    global current_user
+    global current_user, attente_validation_compte
     msg_raw = event.raw_text
     msg = msg_raw.lower()
 
@@ -372,12 +372,17 @@ async def handler(event):
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
-    if "no active tasks" in msg:
-        print(horloge_prefix() + color("[⛔] Aucune tâche disponible", "1;33"))
-        await asyncio.sleep(5)
-        await client.send_message("SmmKingdomTasksBot", "instagram")
+    # Si pas de tâche, relancer un nouveau compte
+    if "no active tasks" in msg and attente_validation_compte:
+        print(horloge_prefix() + color(f"[⛔] Aucune tâche pour {current_user['username']}, changement...", "1;33"))
+        current_user = choisir_utilisateur_random_depuis_sessions_json()
+        if current_user:
+            print(horloge_prefix() + color(f"[♻️] Nouveau compte sélectionné : {current_user['username']}", "1;36"))
+            await event.respond(current_user["username"])
+            await asyncio.sleep(5)
         return
 
+    # Demande de nom d'utilisateur (username)
     if (
         "please give us your profile's username" in msg
         or "choose account from the list" in msg
@@ -387,9 +392,11 @@ async def handler(event):
         if current_user:
             print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {current_user['username']}", "1;36"))
             await event.respond(current_user["username"])
+            attente_validation_compte = True  # en attente de réponse du bot
             await asyncio.sleep(5)
         return
 
+    # Si tâche valide reçue, on désactive le mode attente
     try:
         lien, action = extraire_infos(msg)
 
@@ -397,6 +404,8 @@ async def handler(event):
             print(horloge_prefix() + color("❗Aucune tâche valide détectée.", "1;33"))
             await event.delete()
             return
+
+        attente_validation_compte = False  # on a reçu une vraie tâche
 
         if not current_user:
             current_user = choisir_utilisateur_random_depuis_sessions_json()
@@ -428,7 +437,7 @@ async def handler(event):
         print(horloge_prefix() + color(f"[⛔] Tâche Erreur : {e}", "1;31"))
         await event.respond("⚠️ Erreur, skip")
         afficher_blacklist()
-
+        
 if __name__ == "__main__":
     while True:
         try:
