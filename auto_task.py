@@ -318,7 +318,7 @@ async def main():
     await asyncio.sleep(3)
     # gest mess
 
-    @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
+@client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event)
     try:
         msg = event.raw_text
