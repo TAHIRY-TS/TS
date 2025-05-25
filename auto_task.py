@@ -93,11 +93,11 @@ except:
 
     print(horloge_prefix() + color("Mety tsy tafavoaka enao eee?🥰 aza manahy araho ireto\n"))
     # Affichage avec couleurs ANSI dans Termux
-gris_sombre = "\033[1;30m"
-jaune = "\033[1;33m"
-reset = "\033[0m"
+    gris_sombre = "\033[1;30m"
+    jaune = "\033[1;33m"
+    reset = "\033[0m"
 
-message = f"""{gris_sombre}(1. Rendez-vous sur {jaune}https://my.telegram.org{gris_sombre}
+    message = f"""{gris_sombre}(1. Rendez-vous sur {jaune}https://my.telegram.org{gris_sombre}
 2. Connectez-vous avec votre numéro de téléphone telegram.
 3. Cliquez sur 'API Development Tools'
 4. Remplissez :
@@ -109,7 +109,7 @@ message = f"""{gris_sombre}(1. Rendez-vous sur {jaune}https://my.telegram.org{gr
    - API_HASH
    Copiez ces deux valeurs et entrez-les ci-dessous.){reset}"""
 
-print(message)
+    print(message)
 
     url = "https://my.telegram.org"
     webbrowser.open(url)
