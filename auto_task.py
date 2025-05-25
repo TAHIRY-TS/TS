@@ -5,6 +5,7 @@ import json
 import time
 import asyncio
 import random
+import webbrowser
 from datetime import datetime
 from tabulate import tabulate
 from telethon.sync import TelegramClient
@@ -78,6 +79,23 @@ try:
         api_hash = cfg['api_hash']
         session_str = cfg['session']
 except:
+    titre_section("OBTENIR VOTRE API_ID ET API_HASH")
+
+    print(horloge_prefix() + color("Mety tsy tafavoaka enao eee?🥰 aza manahy araho ireto\n"))"""
+1. Rendez-vous sur https://my.telegram.org
+2. Connectez-vous avec votre numéro de téléphone telegram.
+3. Cliquez sur 'API Development Tools'
+4. Remplissez :
+   - App title: ce que vous voulez (ex: MonBotTS)
+   - Short name: un nom court (ex: tsbot)
+   - URL: laissez vide ou mettez https://example.com
+5. Vous verrez :
+   - API_ID
+   - API_HASH
+   Copiez ces deux valeurs et entrez-les ci-dessous.
+    """)
+    url = "https://my.telegram.org"
+    webbrowser.open(url)
     print(f"{horloge()} Veuillez entrer vos identifiants Telegram")
     api_id = int(input("API ID: "))
     api_hash = input("API HASH: ")
@@ -135,7 +153,6 @@ def prepare_sessions_depuis_json():
             if "uuids" in params:
                 cl.uuids = params["uuids"]
             if "cookies" in params:
-                cl.set_cookies(params["cookies"])
 
             cl.login(username, password)
             cl.dump_settings(session_path)
@@ -147,7 +164,6 @@ def prepare_sessions_depuis_json():
             compte["user_agent"] = cl.user_agent
             compte["uuid"] = cl.uuid
             compte["uuids"] = cl.uuids
-            compte["cookies"] = cl.get_cookies()
 
             with open(chemin_json, "w") as f:
                 json.dump(compte, f, indent=4)
