@@ -321,12 +321,6 @@ def effectuer_action(cl, action, id_cible):
         log_erreur(f"[Action Error] {e}")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
 
-import asyncio
-import os
-import re
-import time
-from telethon import events
-
 # ---------- Main Async Loop ----------
 
 async def demarrer_bot():
@@ -355,17 +349,17 @@ async def handler(event):
     msg_raw = event.raw_text
     msg = msg_raw.lower()
 
-    if "choose social network :" in msg or "all conditions are met?" in msg:
+    if "Choose social network :" in msg or "all conditions are met?" in msg:
         print(horloge_prefix() + color("[🎯] Sélection du réseau : Instagram", "1;33"))
         await event.respond("instagram")
         await asyncio.sleep(3)
         return
 
-    if "💸 my balance" in msg:
+    if "💸 My balance" in msg:
         match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
         montant = match.group(1) if match else "???"
         print(horloge_prefix() + color(f"💸 My Balance : **{montant}** **cashCoins**", "1;36"))
-        await asyncio.sleep(2)
+        await asyncio.sleep(4)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
@@ -380,7 +374,7 @@ async def handler(event):
         if user:
             print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {user['username']}", "1;36"))
             await event.respond(user["username"])
-            await asyncio.sleep(3)
+            await asyncio.sleep(4)
         return
 
     try:
@@ -407,7 +401,7 @@ async def handler(event):
         effectuer_action(cl, action, id_cible)
         await event.respond("✅Completed")
         print(horloge_prefix() + color(f"[✅] Tâche réussie", "1;36"))
-        await asyncio.sleep(3)
+        await asyncio.sleep(4)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
     except Exception as e:
