@@ -131,15 +131,13 @@ def get_android_device_info():
         "tray_session_id": str(uuid.uuid4())
     }
 
-    config = {
         "mid": generate_mid(),
         "ig_u_rur": None,
         "ig_www_claim": "0",
-        "authorization_data": {
+    authorization_data = {
             "ds_user_id": str(uuid.uuid4().int)[:11],
             "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
         }
-    }
 
     device_settings = {
         "manufacturer": get_prop("ro.product.manufacturer"),
@@ -174,10 +172,13 @@ def get_android_device_info():
     return {
         "uuids": uuids,
         "device_settings": device_settings,
-        "config": config,
+        "mid": mid,
+        "ig_u_rur": ig_u_rur,
+        "ig_www_claim": ig_www_claim,
+        "authorization_data": authorization_data,
         "user_agent": user_agent,
         "country": get_prop("persist.sys.country") or get_prop("ro.product.locale.region") or "FR",
-        "country_code": 261,
+        "country_code": 1,
         "locale": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}"),
         "timezone_offset": tz_offset
     }
@@ -206,7 +207,10 @@ def creer_config():
         "username": username,
         "password": password,
         "uuids": info_data["uuids"],
-        "config": info_data["config"],
+        "mid": info_data["mid"],
+        "ig_u_rur": info_data["ig_u_rur"],
+        "ig_www_claim": info_data["ig_www_claim"],
+        "authorization_data": info_data["authorization_data"],
         "cookies": {},
         "last_login": datetime.now().timestamp(),
         "device_settings": info_data["device_settings"],
@@ -315,7 +319,6 @@ def menu():
             safe_input("\nAppuyez sur Entrée...")
         elif choix == '3':
             supprimer_compte()
-            nettoyer_sessions_orphelines()
         elif choix == '4':
             for i in range(3, 0, -1):
                 print(f"\033[1;36mOuverture de script de reconnection dans {i} secondes...\033[0m", end='\r')
