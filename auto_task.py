@@ -304,6 +304,7 @@ def extraire_id_depuis_lien(cl, lien, action):
     except Exception as e:
         print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
+# ------------------manao like , follow, sns eto------------
 def effectuer_action(cl, action, id_cible):
     try:
         if action == "follow":
@@ -340,7 +341,7 @@ async def demarrer_bot():
 
     print(horloge(), color(f"[♻️] Compte initial sélectionné : {current_user['username']}", "1;36"))
 
-    cl = connexion_instagram(current_user)
+    cl = connexion_instagram()
     if not cl:
         print(horloge(), color("⛔ Impossible de se connecter à Instagram", "1;31"))
         return
