@@ -158,19 +158,6 @@ def liker_post(client, lien_post):
         print(f"{ts_time()}{R}[✗] Erreur like : {e}{W}")
         return False
 
-def login_avec_settings(data):
-    username = data.get("username")
-    password = data.get("password")
-    client = Client()
-    try:
-        client.set_settings(data)
-        client.login(username, password)
-        print(f"{ts_time()}{G}[✓] Connexion réussie via settings pour @{username}{W}")
-        return client
-    except Exception as e:
-        print(f"{ts_time()}{R}[✗] Connexion échouée pour @{username} : {e}{W}")
-        return None
-
 def enregistrer_rapport(activites):
     os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
     with open(REPORT_PATH, 'w') as f:
