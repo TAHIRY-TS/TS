@@ -146,7 +146,6 @@ menu_principal() {
             ;;
         6)
             clear
-            echo -e "${CYAN}Auto Follow...${RESET}"
             [[ -f auto_follow.py ]] && python3 auto_follow.py || echo -e "${ROUGE}Fichier manquant.${RESET}"
             echo -ne "${JAUNE}Appyuer sur entré pour revenir au menu..."${RESET}
             read -r
