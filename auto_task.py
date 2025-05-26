@@ -337,7 +337,7 @@ async def handler(event):
 
     try:
         # Cas 1 : Demande de sélection de compte
-        if "▪️ Please give us your profile's username for tasks completing :" in msg:
+        if "▪️ Please give us your profile's username for tasks completing :" in msg or "⭕️ Please choose account from the list" in msg:
             current_user = choisir_utilisateur_random_depuis_sessions_json()
             print(horloge_prefix() + color(f"[🔐] Compte choisi : {current_user['username']}", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
@@ -412,7 +412,6 @@ async def handler(event):
         await event.respond("⚠️ Erreur, skip")
         afficher_blacklist()
         await asyncio.sleep(5)
-        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
 # ---------- Main Loop ----------
 if __name__ == "__main__":
