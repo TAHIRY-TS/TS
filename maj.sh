@@ -1,4 +1,5 @@
 #!/bin/bash
+tput civis
 
 # === CONFIGURATION ===
 VERSION_FILE="version.txt"
