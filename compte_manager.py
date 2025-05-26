@@ -12,6 +12,8 @@ import string
 import time
 from datetime import datetime, timezone
 
+print("\033[?25l", end="", flush=True)  # Masquer le curseur
+
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = PROJECT_DIR
 SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
