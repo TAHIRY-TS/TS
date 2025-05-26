@@ -331,7 +331,7 @@ current_user = None
 client_instagram = None
     
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
-async def handler(event):
+async def handler():
     global current_user, attente_validation_compte
     print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
     prepare_sessions_depuis_json()
