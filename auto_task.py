@@ -422,7 +422,7 @@ async def handler(event):
 if __name__ == "__main__":
     while True:
         try:
-            asyncio.run(handler(event))
+            asyncio.run(handler())
         except KeyboardInterrupt:
             print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
             time.sleep(3)
