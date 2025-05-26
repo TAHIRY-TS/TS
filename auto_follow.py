@@ -78,7 +78,7 @@ def login_avec_settings(data):
             if key in data:
                 if key == "settings": cl.set_settings(data[key])
                 else: setattr(cl, key, data[key])
-        cl.login(data["username"], data["password"], data["settings"], data["authorization_data"], data["user_agent"], data["device_settings"], data["uuids"])
+        cl.login(data["username"], data["password"], data["authorization_data"], data["user_agent"], data["device_settings"], data["uuids"])
         return cl
     except Exception as e:
         ajouter_a_blacklist(data.get("username", "unknown"), str(e))
