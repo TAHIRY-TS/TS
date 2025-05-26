@@ -328,23 +328,13 @@ def log_erreur(message):
 # ---------- Main Async Loop ----------
 attente_validation_compte = False
 current_user = None
-client_instagram = None
-    
+
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
-async def handler():
+async def handler(event):
     global current_user, attente_validation_compte
-    print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
-    prepare_sessions_depuis_json()
-    afficher_blacklist()
-    print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
-    await client.start()
-    await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-    await client.run_until_disconnected()
-    
+
     msg_raw = event.raw_text
     msg = msg_raw.lower()
-
-    
 
     if "💸 my balance" in msg:
         match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
@@ -391,7 +381,7 @@ async def handler():
             current_user = choisir_utilisateur_random_depuis_sessions_json()
 
         print(horloge_prefix() + color(f"[🔐] Connexion au compte : {current_user['username']}", "1;36"))
-        cl = connexion_instagram()
+        cl = connexion_instagram(current_user)
         if not cl:
             print(horloge_prefix() + color("[⚠️] Connexion Instagram impossible", "1;33"))
             return
@@ -419,15 +409,22 @@ async def handler():
         await event.respond("⚠️ Erreur, skip")
         afficher_blacklist()
 
+# ---------- Main Loop ----------
 if __name__ == "__main__":
     while True:
         try:
-            asyncio.run(handler())
+            print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
+            prepare_sessions_depuis_json()
+            afficher_blacklist()
+            print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
+            with client:
+                client.loop.run_until_complete(client.send_message("SmmKingdomTasksBot", "📝Tasks📝"))
+                client.run_until_disconnected()
         except KeyboardInterrupt:
             print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
             time.sleep(3)
-            os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
+            os.execvp("bash", ["bash", os.path.join("start.sh")])
         except Exception as e:
             log_erreur(f"[MAIN LOOP ERROR] {e}")
             print(horloge() + color(f"⚠️ Redémarrage du bot après erreur : {e}", "1;33"))
-            time.sleep(5)  # Pause avant redémarrage
+            time.sleep(5)
