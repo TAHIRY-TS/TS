@@ -356,7 +356,6 @@ async def handler(event):
         if "no active tasks" in msg:
             if current_user:
                 print(horloge_prefix() + color(f"[⛔] Aucune tâche sur {current_user['username']}", "1;33"))
-                print(horloge_prefix() + color("[🎯] Social network: instagram", "1;36"))
                 await asyncio.sleep(random.randint(5, 10))
                 await client.send_message("SmmKingdomTasksBot", "instagram")
             else:
