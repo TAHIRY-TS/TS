@@ -19,7 +19,9 @@ SESSION_DIR = os.path.join(BASE, "sessions")
 LOGO_PATH = os.path.join(BASE, "logo.sh")
 SELECTED_USER_PATH = os.path.join(BASE, "selected_user.json")
 BLACKLIST_PATH = os.path.join(BASE, "blacklist.json")
-IMAGES_DIR = os.path.join(BASE, "images")
+storage_path = os.path.expanduser("~/storage")
+ts_path = os.path.join(storage_path, "shared", "TS images")
+IMAGES_DIR = ts_path
 os.makedirs(SESSION_DIR, exist_ok=True)
 
 # Affichage
@@ -40,6 +42,25 @@ def ajouter_a_blacklist(username, raison):
     data[username] = {"raison": raison, "timestamp": str(datetime.now())}
     with open(BLACKLIST_PATH, "w") as f:
         json.dump(data, f, indent=4)
+def check_and_create_ts_folder():
+    
+    # Vérification du stockage
+    if not os.path.isdir(storage_path):
+        print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
+        print(color("[+] Exécution de termux-setup-storage...", "1;34"))
+        subprocess.run(["termux-setup-storage"])
+        time.sleep(3)
+
+    # Vérification post-setup
+    if os.path.isdir(storage_path):
+        # Création du dossier TS/images/
+        if not os.path.exists(ts_path):
+            os.makedirs(ts_path)
+            print(color(f"[✔] Dossier TS images créé veuiller copier des images dans ce dossier à publier sur instagram ", "1;32"))
+        else:
+            print(color(f"[ℹ] Le dossier TS images dejà crée, veuillez copier dans ce dossier votre images à publier ", "1;36"))
+    else:
+        print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
 
 def login_avec_settings(data):
     try:
