@@ -346,7 +346,7 @@ async def handler(event):
             return
 
         # Cas 2 : chose social network
-        if "choose social network" in msg:
+        if ("choose social network" in msg or "current status" in msg):
             print(horloge_prefix() + color("[🎯] Social network: Instagram", "1;36"))
             await asyncio.sleep(random.randint(2, 4))
             await client.send_message("SmmKingdomTasksBot", "Instagram")
