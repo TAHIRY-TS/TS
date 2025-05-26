@@ -163,7 +163,7 @@ def main():
         follows = 0
         for data in comptes:
             if follows >= n_follow: break
-                client = login_avec_settings(data)
+            client = login_avec_settings(data)
             if client:
                 if follow_user(client, lien):
                     activites.append(f"{data['username']} → FOLLOW OK")
