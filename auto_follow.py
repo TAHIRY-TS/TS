@@ -1,5 +1,5 @@
 import os
-import session
+import json
 import random
 import time
 import shutil
@@ -7,7 +7,6 @@ import subprocess
 from datetime import datetime
 from instagrapi import Client
 from urllib.parse import urlparse
-from auto_task import connexion_instagram
 
 # Couleurs terminal
 G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
@@ -22,6 +21,7 @@ REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 LOGO_PATH = os.path.join(BASE, 'logo.sh')
 
 os.makedirs(SESSION_DIR, exist_ok=True)
+
 def ts_time():
     return f"{B}[TS {datetime.now().strftime('%H:%M')}] {W}"
 
@@ -45,12 +45,12 @@ def titre_section1(titre):
     print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
     print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
 
-def load_session(path):
-    return session.load(open(path)) if os.path.exists(path) else {}
+def load_json(path):
+    return json.load(open(path)) if os.path.exists(path) else {}
 
-def save_session(path, data):
+def save_json(path, data):
     with open(path, 'w') as f:
-        session.dump(data, f, indent=4)
+        json.dump(data, f, indent=4)
 
 def extraire_username_depuis_lien(lien):
     try:
@@ -59,44 +59,18 @@ def extraire_username_depuis_lien(lien):
     except Exception as e:
         print(f"{ts_time()}{R}[!] Erreur lien : {e}{W}")
         return None
-        
-def color(msg, code):
-    return f"\033[{code}m{msg}\033[0m"
-
-def check_and_create_ts_folder():
-    storage_path = os.path.expanduser("~/storage")
-    ts_path = os.path.join(storage_path, "shared", "TS images")
-
-    # Vérification du stockage
-    if not os.path.isdir(storage_path):
-        print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
-        print(color("[+] Exécution de termux-setup-storage...", "1;34"))
-        subprocess.run(["termux-setup-storage"])
-        time.sleep(3)
-
-    # Vérification post-setup
-    if os.path.isdir(storage_path):
-        # Création du dossier TS/images/
-        if not os.path.exists(ts_path):
-            os.makedirs(ts_path)
-            print(color(f"[✔] Dossier TS images créé veuiller copier des images dans ce dossier à publier sur instagram ", "1;32"))
-        else:
-            print(color(f"[ℹ] Le dossier TS images dejà crée, veuillez copier dans ce dossier votre images à publier ", "1;36"))
-    else:
-        print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
-
 
 def get_all_accounts():
-    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
+    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json")]
     comptes = []
     for i, f in enumerate(fichiers):
-        data = load_session(os.path.join(SESSION_DIR, f))
+        data = load_json(os.path.join(CONFIG_DIR, f))
         if data.get("username") and (data.get("password") or data.get("authorization_data")):
             comptes.append((i + 1, data['username'], data))
     return comptes
 
 def choisir_comptes(comptes):
-    print(f"{ts_time()}{C}----- Comptes disponibles -----{W}")
+    print(f"{ts_time()}{C}--- Comptes disponibles ---{W}")
     for i, username, _ in comptes:
         print(f"{Y}{i}.{W} {username}")
     indexes = input(f"{ts_time()}{C}Entrez les numéros des comptes à utiliser (séparés par des virgules) : {W}").strip()
@@ -126,8 +100,8 @@ def follow_user(client, username_cible):
         return False
 
 def publier_images(client, nombre_images):
-    if not os.path.exists(ts_path):
-        print(f"{ts_time()}{R}[!] Dossier TS images introuvable : {IMAGE_DIR}{W}")
+    if not os.path.exists(IMAGE_DIR):
+        print(f"{ts_time()}{R}[!] Dossier images introuvable : {IMAGE_DIR}{W}")
         return
 
     images = [os.path.join(IMAGE_DIR, img) for img in os.listdir(IMAGE_DIR) if img.lower().endswith((".jpg", ".png", ".jpeg"))]
@@ -156,6 +130,19 @@ def liker_post(client, lien_post):
         print(f"{ts_time()}{R}[✗] Erreur like : {e}{W}")
         return False
 
+def login_avec_settings(data):
+    username = data.get("username")
+    password = data.get("password")
+    client = Client()
+    try:
+        client.set_settings(data)
+        client.login(username, password)
+        print(f"{ts_time()}{G}[✓] Connexion réussie via settings pour @{username}{W}")
+        return client
+    except Exception as e:
+        print(f"{ts_time()}{R}[✗] Connexion échouée pour @{username} : {e}{W}")
+        return None
+
 def enregistrer_rapport(activites):
     os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
     with open(REPORT_PATH, 'w') as f:
@@ -164,7 +151,6 @@ def enregistrer_rapport(activites):
     print(f"{ts_time()}{C}[✓] Rapport enregistré dans {REPORT_PATH}{W}")
 
 def menu():
-    
     titre_section("INSTABOT FINAL - BY TS")
     print(f"{Y}\n1.{W} Follow auto")
     print(f"{Y}2.{W} Like auto")
@@ -173,7 +159,6 @@ def menu():
     return input(f"{C}\nVotre choix : {W}").strip()
 
 if __name__ == "__main__":
-    check_and_create_ts_folder()
     activites = []
     choix = menu()
     comptes_dispo = get_all_accounts()
@@ -197,7 +182,7 @@ if __name__ == "__main__":
 
         for username, data in comptes_utilises:
             if suivis >= n_follow: break
-            client = connexion_instagram()
+            client = login_avec_settings(data)
             if client:
                 resultat = follow_user(client, cible)
                 if resultat:
@@ -212,7 +197,7 @@ if __name__ == "__main__":
         titre_section1("PUBLICATION AUTO")
         n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
-            client = connexion_instagram()
+            client = login_avec_settings(data)
             if client:
                 publier_images(client, n_img)
                 activites.append(f"{username} → PUBLIÉ {n_img} images")
@@ -227,7 +212,7 @@ if __name__ == "__main__":
 
         for username, data in comptes_utilises:
             if likes >= n_like: break
-            client = connexion_instagram()
+            client = login_avec_settings(data)
             if client:
                 resultat = liker_post(client, lien)
                 if resultat:
