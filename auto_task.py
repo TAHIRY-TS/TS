@@ -231,7 +231,7 @@ def choisir_utilisateur_random_depuis_sessions_json():
 
 # ---------- Connexion Instagram ----------
 
-def connexion_instagram():
+def connexion_instagram(current_user):
     try:
         with open(SELECTED_USER_PATH, "r") as f:
             compte = json.load(f)
