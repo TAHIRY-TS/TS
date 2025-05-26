@@ -45,12 +45,12 @@ def titre_section1(titre):
     print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
     print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
 
-def load_json(path):
-    return json.load(open(path)) if os.path.exists(path) else {}
+def load_session(path):
+    return session.load(open(path)) if os.path.exists(path) else {}
 
-def save_json(path, data):
+def save_session(path, data):
     with open(path, 'w') as f:
-        json.dump(data, f, indent=4)
+        session.dump(data, f, indent=4)
 
 def extraire_username_depuis_lien(lien):
     try:
@@ -85,8 +85,6 @@ def check_and_create_ts_folder():
     else:
         print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
 
-# Lancer
-check_and_create_ts_folder()
 
 def get_all_accounts():
     fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
@@ -98,7 +96,7 @@ def get_all_accounts():
     return comptes
 
 def choisir_comptes(comptes):
-    print(f"{ts_time()}{C}--- Comptes disponibles ---{W}")
+    print(f"{ts_time()}{C}----- Comptes disponibles -----{W}")
     for i, username, _ in comptes:
         print(f"{Y}{i}.{W} {username}")
     indexes = input(f"{ts_time()}{C}Entrez les numéros des comptes à utiliser (séparés par des virgules) : {W}").strip()
