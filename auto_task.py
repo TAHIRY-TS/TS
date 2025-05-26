@@ -414,7 +414,7 @@ if __name__ == "__main__":
     print(horloge(), color("🔄 Preparation de donné...", "1;33"))
     try:
         prepare_sessions_depuis_json()
-        print(horloge_prefix(), color("🔄 Lancement du bot...", "1;33")
+        print(horloge_prefix(), color("🔄 Lancement du bot...", "1;33"))
         client.start()
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         client.run_until_disconnected()
