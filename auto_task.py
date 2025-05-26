@@ -411,11 +411,12 @@ async def handler(event):
 
 # ---------- Main Loop ----------
 if __name__ == "__main__":
-    print(horloge(), color("🔄 Lancement du bot...", "1;33"))
+    print(horloge(), color("🔄 Preparation de donné...", "1;33"))
     try:
         prepare_sessions_depuis_json()
-        afficher_blacklist()
+        print(horloge_prefix(), color("🔄 Lancement du bot...", "1;33"
         client.start()
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         client.run_until_disconnected()
     except KeyboardInterrupt:
         print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
