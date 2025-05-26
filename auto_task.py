@@ -401,11 +401,10 @@ async def handler(event):
         if "💸 my balance" in msg:
             match = re.search(r"💸\s*My\s*Balance\s*[:：]?\s*\*?\*?([0-9.,kK]+)\*?\*?", msg_raw, re.IGNORECASE)
             montant = match.group(1) if match else "???"
-            print(horloge_prefix() + color(f"💸 My Balance : {montant} cashCoins", "1;36"))
+            print(horloge_prefix() + color("💸 My Balance : ", "1;37") + color(f"{montant}", "1;35") + color(" cashCoins", "1;37"))
             await asyncio.sleep(4)
             await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
             return
-
     except Exception as e:
         log_erreur(f"[Handler Error] {e}")
         print(horloge_prefix() + color(f"[⛔] Erreur de traitement : {e}", "1;31"))
