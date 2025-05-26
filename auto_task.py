@@ -13,6 +13,7 @@ from telethon.sessions import StringSession
 from telethon import events
 from instagrapi import Client as IGClient
 
+print("\033[?25l", end="", flush=True)  # Masquer le curseur
 # ---------- Utilitaires ----------
 
 def color(text, code):
