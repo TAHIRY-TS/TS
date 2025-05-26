@@ -411,20 +411,18 @@ async def handler(event):
 
 # ---------- Main Loop ----------
 if __name__ == "__main__":
-    while True:
-        try:
-            print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
-            prepare_sessions_depuis_json()
-            afficher_blacklist()
-            print(horloge(), color("🔛 Bot Telegram prêt.", "1;32"))
-            with client:
-                client.loop.run_until_complete(client.send_message("SmmKingdomTasksBot", "📝Tasks📝"))
-                client.run_until_disconnected()
-        except KeyboardInterrupt:
-            print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
-            time.sleep(3)
-            os.execvp("bash", ["bash", os.path.join("start.sh")])
-        except Exception as e:
-            log_erreur(f"[MAIN LOOP ERROR] {e}")
-            print(horloge() + color(f"⚠️ Redémarrage du bot après erreur : {e}", "1;33"))
-            time.sleep(5)
+    print(horloge(), color("🔄 Lancement du bot...", "1;33"))
+    try:
+        prepare_sessions_depuis_json()
+        afficher_blacklist()
+        client.start()
+        client.run_until_disconnected()
+    except KeyboardInterrupt:
+        print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
+        time.sleep(3)
+        os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
+    except Exception as e:
+        log_erreur(f"[MAIN LOOP ERROR] {e}")
+        print(horloge() + color(f"⚠️ Redémarrage du bot après erreur : {e}", "1;33"))
+        time.sleep(5)
+        os.execvp("bash", ["bash", os.path.join(BASE_DIR, "start.sh")])
