@@ -340,14 +340,14 @@ async def handler(event):
         if ("▪️ please give us your profile's username for tasks completing :" in msg or "⭕️ please choose account from the list" in msg):
             current_user = choisir_utilisateur_random_depuis_sessions_json()
             print(horloge_prefix() + color(f"[🔍] Recherche de tache pour: {current_user['username']}", "1;36"))
-            await asyncio.sleep(random.randint(5, 10))
+            await asyncio.sleep(random.randint(3, 5))
             await client.send_message("SmmKingdomTasksBot", current_user['username'])
             return
 
         # Cas 2 : chose social network
         if "choose social network" in msg:
             print(horloge_prefix() + color("[🎯] Social network: Instagram", "1;36"))
-            await asyncio.sleep(random.randint(5, 10))
+            await asyncio.sleep(random.randint(3, 5))
             await client.send_message("SmmKingdomTasksBot", "Instagram")
             return
             
@@ -356,7 +356,7 @@ async def handler(event):
         if "no active tasks" in msg:
             if current_user:
                 print(horloge_prefix() + color(f"[⛔] Aucune tâche sur {current_user['username']}", "1;33"))
-                await asyncio.sleep(random.randint(5, 10))
+                await asyncio.sleep(random.randint(3, 5))
                 await client.send_message("SmmKingdomTasksBot", "instagram")
             else:
                 print(horloge_prefix() + color("[⛔] Aucune tâche active, mais aucun utilisateur sélectionné.", "1;31"))
