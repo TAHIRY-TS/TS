@@ -187,7 +187,6 @@ def get_android_device_info():
 
 def creer_config():
     clear()
-    time.sleep(2)
     titre_section("AJOUTER UN COMPTE")
     username = safe_input("Nom d'utilisateur Instagram: ").strip()
     password = safe_input("Mot de passe: ").strip()
@@ -232,7 +231,6 @@ def creer_config():
 
 def lister_comptes():
     clear()
-    time.sleep(1)
     fichiers = sorted([
         f for f in os.listdir(CONFIG_DIR)
         if f.endswith('.json') and '_session' not in f and f not in ['config.json', 'selected_user.json']
@@ -304,7 +302,6 @@ def supprimer_compte():
 def menu():
     while True:
         clear()
-        time.sleep(1)
         titre_section("GESTION DES COMPTES INSTAGRAM")
         print("1. 📌 Ajouter un compte")
         print("2. 📝 Lister les comptes")
