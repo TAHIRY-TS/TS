@@ -20,8 +20,7 @@ SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 LOGO_PATH = os.path.join(BASE, 'logo.sh')
 
-os.makedirs(SESSION_DIR, exist_ok=True)
-os.makedirs(
+os.makedirs(SESSION_DIR, exist_ok=True
 def ts_time():
     return f"{B}[TS {datetime.now().strftime('%H:%M')}] {W}"
 
