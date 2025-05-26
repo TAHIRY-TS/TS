@@ -1,6 +1,7 @@
 #!/bin/bash
 chmod +x ./*.sh ./*.py
 clear
+tpus civis
 
 # === Couleurs ===
 ROUGE="\033[0;31m"
