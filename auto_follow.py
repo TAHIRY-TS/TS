@@ -18,7 +18,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 SESSION_DIR = os.path.join(BASE, "sessions")
 LOGO_PATH = os.path.join(BASE, "logo.sh")
 SELECTED_USER_PATH = os.path.join(BASE, "selected_user.json")
-BLACKLIST_PATH = os.path.join(BASE, "blacklist.json")
+blacklist_path = os.path.join(BASE, "blacklist.json")
 storage_path = os.path.expanduser("~/storage")
 ts_path = os.path.join(storage_path, "shared", "TS images")
 IMAGES_DIR = ts_path
@@ -35,13 +35,22 @@ def titre_section(titre):
     print(f"{spaces}\033[1;35m╚{'═'*largeur}╝{W}\n")
 
 def ajouter_a_blacklist(username, raison):
-    data = {}
-    if os.path.exists(BLACKLIST_PATH):
-        with open(BLACKLIST_PATH, "r") as f:
-            data = json.load(f)
-    data[username] = {"raison": raison, "timestamp": str(datetime.now())}
-    with open(BLACKLIST_PATH, "w") as f:
-        json.dump(data, f, indent=4)
+    try:
+        if os.path.exists(blacklist_path):
+            with open(blacklist_path, "r") as f:
+                blacklist = json.load(f)
+        else:
+            blacklist = {}
+
+        blacklist[username] = {
+            "raison": raison,
+            "timestamp": str(datetime.now())
+        }
+
+        with open(blacklist_path, "w") as f:
+            json.dump(blacklist, f, indent=4)
+    except Exception as e:
+        print(f"Erreur lors de l'ajout à la blacklist : {e}")
 def check_and_create_ts_folder():
     
     # Vérification du stockage
@@ -69,7 +78,7 @@ def login_avec_settings(data):
             if key in data:
                 if key == "settings": cl.set_settings(data[key])
                 else: setattr(cl, key, data[key])
-        cl.login(data["username"], data["password"], data["settings"], data["autorization_data"], data["user_agent"], data["device_settings"], data["uuids"], data["local"])
+        cl.login(data["username"], data["password"], data["settings"], data["authorization_data"], data["user_agent"], data["device_settings"], data["uuids"], data["local"])
         return cl
     except Exception as e:
         ajouter_a_blacklist(data.get("username", "unknown"), str(e))
