@@ -127,7 +127,6 @@ def follow_user(client, username_cible):
         return False
 
 def publier_images(client, nombre_images):
-    check_termux_storage()
     if not os.path.exists(ts_path):
         print(f"{ts_time()}{R}[!] Dossier TS images introuvable : {IMAGE_DIR}{W}")
         return
