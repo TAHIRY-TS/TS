@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime
 from instagrapi import Client
 from urllib.parse import urlparse
-from auto_task.py import connexion_instagram
+from auto_task import connexion_instagram
 
 # Couleurs terminal
 G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
