@@ -175,23 +175,36 @@ def main():
 
     elif choix == "3":
         titre_section("PUBLICATION IMAGES")
+        comptes_disponibles = charger_comptes()
+
+        print(f"{Y}Sélectionne le(s) compte(s) pour publier :{W}")
+        for i, compte in enumerate(comptes_disponibles):
+            print(f"{C}{i+1}{W} - {compte['username']}")
+        print(f"{C}all{W} - Tous les comptes")
+
+        choix_utilisateurs = input(f"{Y}Numéro(s) du compte (ex: 1 ou 1,3 ou all): {W}").strip()
+
+        if choix_utilisateurs.lower() == "all":
+            comptes_selectionnes = comptes_disponibles
+        else:
+            indices = [int(i.strip()) - 1 for i in choix_utilisateurs.split(",") if i.strip().isdigit()]
+            comptes_selectionnes = [comptes_disponibles[i] for i in indices if 0 <= i < len(comptes_disponibles)]
+
+        if not comptes_selectionnes:
+            print(horloge(), color("Aucun compte sélectionné", "1;31"))
+            return
+
         n_images = int(input(f"{Y}Nombre d'images par compte : {W}"))
-        for data in comptes:
+        for data in comptes_selectionnes:
             client = login_avec_settings(data)
             if client:
                 publier_images(client, n_images)
-                activites.append(f"{data['username']} → {n_images} images publiées")
+                msg = f"{data['username']}→{n_images} images publiées"
+                activites.append(msg)
+                print(horloge(), color(msg, "1;36"))
             else:
-                activites.append(f"{data['username']} → ECHEC CONNEXION")
-
-    elif choix == "0":
-        print(horloge(), color("Fermeture du programme...", "1;36"))
-        return
-
-    else:
-        print(horloge(), color("[!] Choix invalide", "1;31"))
-
-    enregistrer_rapport(activites)
-
+                msg = f"{data['username']} → ECHEC CONNEXION"
+                activites.append(msg)
+                print(horloge(), color(msg, "1;31"))
 if __name__ == "__main__":
     main()
