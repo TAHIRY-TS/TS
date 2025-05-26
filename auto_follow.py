@@ -20,11 +20,8 @@ SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 LOGO_PATH = os.path.join(BASE, 'logo.sh')
 
-storage_path = os.path.expanduser("~/storage")
-    ts_path = os.path.join(storage_path, "shared", "TS images")
-
 os.makedirs(SESSION_DIR, exist_ok=True)
-
+os.makedirs(
 def ts_time():
     return f"{B}[TS {datetime.now().strftime('%H:%M')}] {W}"
 
@@ -183,6 +180,7 @@ def enregistrer_rapport(activites):
     print(f"{ts_time()}{C}[✓] Rapport enregistré dans {REPORT_PATH}{W}")
 
 def menu():
+    
     titre_section("INSTABOT FINAL - BY TS")
     print(f"{Y}\n1.{W} Follow auto")
     print(f"{Y}2.{W} Like auto")
@@ -191,6 +189,7 @@ def menu():
     return input(f"{C}\nVotre choix : {W}").strip()
 
 if __name__ == "__main__":
+    check_and_create_ts_folder()
     activites = []
     choix = menu()
     comptes_dispo = get_all_accounts()
