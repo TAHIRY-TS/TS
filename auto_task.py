@@ -19,10 +19,10 @@ def color(text, code):
     return f"\033[{code}m{text}\033[0m"
 
 def horloge():
-    return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;36")
+    return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;34")
 
 def horloge_prefix():
-    return color(f"[TS {datetime.now().strftime('%H:%M')}]", "1;34") + " "
+    return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;34") + " "
 
 def titre_section(titre):
     largeur = 50
@@ -337,7 +337,7 @@ async def handler(event):
 
     try:
         # Cas 1 : Demande de sélection de compte
-        if "▪️ Please give us your profile's username for tasks completing :" in msg or "⭕️ Please choose account from the list" in msg:
+        if ("▪️ please give us your profile's username for tasks completing :" in msg or "⭕️ please choose account from the list" in msg):
             current_user = choisir_utilisateur_random_depuis_sessions_json()
             print(horloge_prefix() + color(f"[🔐] Compte choisi : {current_user['username']}", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
@@ -345,10 +345,10 @@ async def handler(event):
             return
 
         # Cas 2 : chose social network
-        if "Chose social network" in msg :
+        if "Chose social network" in msg:
             print(horloge_prefix() + color("[🎯] Social network: instagram", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
-            await client.send_message("SmmKingdomTasksBot", instagram)
+            await client.send_message("SmmKingdomTasksBot", "instagram")
             return
             
         # Cas 2 : Aucune tâche active
@@ -358,7 +358,7 @@ async def handler(event):
                 print(horloge_prefix() + color(f"[⛔] Aucune tâche sur {current_user['username']}", "1;33"))
                 print(horloge_prefix() + color("[🎯] Social network: instagram", "1;36"))
                 await asyncio.sleep(random.randint(5, 10))
-                await client.send_message("SmmKingdomTasksBot", current_user['username'])
+                await client.send_message("SmmKingdomTasksBot", "instagram")
             else:
                 print(horloge_prefix() + color("[⛔] Aucune tâche active, mais aucun utilisateur sélectionné.", "1;31"))
                 return
@@ -398,8 +398,9 @@ async def handler(event):
             return
 
         # Cas 4 : Affichage du solde
+        
         if "💸 my balance" in msg:
-            match = re.search(r"💸 My Balance\s*:\s*\*\*(.*?)\*\*", msg_raw, re.IGNORECASE)
+            match = re.search(r"💸\s*My\s*Balance\s*[:：]?\s*\*?\*?([0-9.,kK]+)\*?\*?", msg_raw, re.IGNORECASE)
             montant = match.group(1) if match else "???"
             print(horloge_prefix() + color(f"💸 My Balance : {montant} cashCoins", "1;36"))
             await asyncio.sleep(4)
