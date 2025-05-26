@@ -329,9 +329,10 @@ def log_erreur(message):
 attente_validation_compte = False
 current_user = None
 client_instagram = None
-
-async def demarrer_bot():
-    global current_user
+    
+@client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
+async def handler(event):
+    global current_user, attente_validation_compte
     print(horloge(), color("🔄 Préparation des comptes...", "1;33"))
     prepare_sessions_depuis_json()
     afficher_blacklist()
@@ -339,10 +340,7 @@ async def demarrer_bot():
     await client.start()
     await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
     await client.run_until_disconnected()
-
-@client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
-async def handler(event):
-    global current_user, attente_validation_compte
+    
     msg_raw = event.raw_text
     msg = msg_raw.lower()
 
@@ -424,7 +422,7 @@ async def handler(event):
 if __name__ == "__main__":
     while True:
         try:
-            asyncio.run(demarrer_bot())
+            asyncio.run(handler(event))
         except KeyboardInterrupt:
             print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
             time.sleep(3)
