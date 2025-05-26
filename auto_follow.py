@@ -7,6 +7,7 @@ import subprocess
 from datetime import datetime
 from instagrapi import Client
 from urllib.parse import urlparse
+from auto_task.py import connexion_instagram()
 
 # Couleurs terminal
 G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
@@ -88,10 +89,10 @@ def check_and_create_ts_folder():
 check_and_create_ts_folder()
 
 def get_all_accounts():
-    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json")]
+    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
     comptes = []
     for i, f in enumerate(fichiers):
-        data = load_json(os.path.join(CONFIG_DIR, f))
+        data = load_session(os.path.join(SESSION_DIR, f))
         if data.get("username") and (data.get("password") or data.get("authorization_data")):
             comptes.append((i + 1, data['username'], data))
     return comptes
@@ -211,7 +212,7 @@ if __name__ == "__main__":
 
         for username, data in comptes_utilises:
             if suivis >= n_follow: break
-            client = login_avec_settings(data)
+            client = connexion_instagram()
             if client:
                 resultat = follow_user(client, cible)
                 if resultat:
@@ -226,7 +227,7 @@ if __name__ == "__main__":
         titre_section1("PUBLICATION AUTO")
         n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
-            client = login_avec_settings(data)
+            client = connexion_instagram()
             if client:
                 publier_images(client, n_img)
                 activites.append(f"{username} → PUBLIÉ {n_img} images")
@@ -241,7 +242,7 @@ if __name__ == "__main__":
 
         for username, data in comptes_utilises:
             if likes >= n_like: break
-            client = login_avec_settings(data)
+            client = connexion_instagram()
             if client:
                 resultat = liker_post(client, lien)
                 if resultat:
