@@ -59,6 +59,27 @@ def extraire_username_depuis_lien(lien):
     except Exception as e:
         print(f"{ts_time()}{R}[!] Erreur lien : {e}{W}")
         return None
+def check_and_create_ts_folder():
+    storage_path = os.path.expanduser("~/storage")
+    ts_path = os.path.join(storage_path, "shared", "TS images")
+
+    # Vérification du stockage
+    if not os.path.isdir(storage_path):
+        print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
+        print(color("[+] Exécution de termux-setup-storage...", "1;34"))
+        subprocess.run(["termux-setup-storage"])
+        time.sleep(3)
+
+    # Vérification post-setup
+    if os.path.isdir(storage_path):
+        # Création du dossier TS/images/
+        if not os.path.exists(ts_path):
+            os.makedirs(ts_path)
+            print(color(f"[✔] Dossier TS images créé veuiller copier des images dans ce dossier à publier sur instagram ", "1;32"))
+        else:
+            print(color(f"[ℹ] Le dossier TS images dejà crée, veuillez copier dans ce dossier votre images à publier ", "1;36"))
+    else:
+        print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
 
 def get_all_accounts():
     fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json")]
@@ -159,6 +180,7 @@ def menu():
     return input(f"{C}\nVotre choix : {W}").strip()
 
 if __name__ == "__main__":
+    
     activites = []
     choix = menu()
     comptes_dispo = get_all_accounts()
@@ -194,6 +216,7 @@ if __name__ == "__main__":
                 activites.append(f"{username} → ECHEC CONNEXION")
 
     elif choix == "3":
+        check_and_create_ts_folder()
         titre_section1("PUBLICATION AUTO")
         n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
