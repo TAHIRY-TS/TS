@@ -14,7 +14,9 @@ G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\
 BASE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = BASE
 PROJECT_DIR = BASE
-IMAGE_DIR = os.path.join(BASE, 'images')
+storage_path = os.path.expanduser("~/storage")
+ts_path = os.path.join(storage_path, "shared", "TS images")
+IMAGE_DIR = ts_path
 SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
@@ -60,9 +62,6 @@ def extraire_username_depuis_lien(lien):
         print(f"{ts_time()}{R}[!] Erreur lien : {e}{W}")
         return None
 def check_and_create_ts_folder():
-    storage_path = os.path.expanduser("~/storage")
-    ts_path = os.path.join(storage_path, "shared", "TS images")
-
     # Vérification du stockage
     if not os.path.isdir(storage_path):
         print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
