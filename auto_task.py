@@ -326,12 +326,19 @@ def log_erreur(message):
     with open(ERROR_LOG, "a") as f:
         f.write(f"{horloge()} {message}\n")
 # ---------- Main Async Loop ----------
-attente_validation_compte = False
-current_user = None
+import os
+import re
+import time
+import asyncio
+from telethon import TelegramClient, events
+
+# === Tes imports et fonctions (connexion_instagram, horloge, etc.) doivent être ici ===
+
+current_user = None  # Plus besoin de attente_validation_compte
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
-    global current_user, attente_validation_compte
+    global current_user
 
     msg_raw = event.raw_text
     msg = msg_raw.lower()
@@ -344,38 +351,18 @@ async def handler(event):
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
-    if "no active tasks" in msg and attente_validation_compte:
-        print(horloge_prefix() + color(f"[⛔] Aucune tâche pour {current_user['username']} => Changement...", "1;33"))
-        current_user = choisir_utilisateur_random_depuis_sessions_json()
-        if current_user:
-            print(horloge_prefix() + color(f"[♻️] Nouveau compte sélectionné : {current_user['username']}", "1;36"))
-            await event.respond(current_user["username"])
-            attente_validation_compte = True
-            await asyncio.sleep(5)
+    if "no active tasks" in msg:
+        print(horloge_prefix() + color("[⛔] Aucune tâche disponible, nouvelle tentative dans 10 secondes...", "1;33"))
+        await asyncio.sleep(10)
+        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
         return
 
-    if (
-        "please give us your profile's username" in msg
-        or "choose account from the list" in msg
-        or "limited" in msg
-    ):
-        current_user = choisir_utilisateur_random_depuis_sessions_json()
-        if current_user:
-            print(horloge_prefix() + color(f"[♻️] Compte sélectionné : {current_user['username']}", "1;36"))
-            await event.respond(current_user["username"])
-            attente_validation_compte = True
-            await asyncio.sleep(5)
-        return
-
-    # Tâche détectée
     try:
         lien, action = extraire_infos(msg)
         if not lien or not action:
             print(horloge_prefix() + color("❗Aucune tâche valide détectée.", "1;33"))
             await event.delete()
             return
-
-        attente_validation_compte = False
 
         if not current_user:
             current_user = choisir_utilisateur_random_depuis_sessions_json()
@@ -411,13 +398,18 @@ async def handler(event):
 
 # ---------- Main Loop ----------
 if __name__ == "__main__":
-    print(horloge(), color("🔄 Preparation de donné...", "1;33"))
+    print(horloge(), color("🔄 Préparation des données...", "1;33"))
     try:
         prepare_sessions_depuis_json()
-        print(horloge_prefix(), color("🔄 Lancement du bot...", "1;33"))
-        client.start()
-        await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-        client.run_until_disconnected()
+        print(horloge(), color("🔄 Lancement du bot...", "1;33"))
+        
+        async def main():
+            await client.start()
+            await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+            await client.run_until_disconnected()
+
+        asyncio.run(main())
+
     except KeyboardInterrupt:
         print(horloge() + " [📴] Arrêt manuel, retour au menu dans 3 secondes...")
         time.sleep(3)
