@@ -154,25 +154,24 @@ def main():
             else:
                 activites.append(f"{data.get('username', '?')} → ECHEC CONNEXION")
     elif choix == "2":
-    titre_section("FOLLOW AUTO")
-    lien = input(f"{Y}Lien du profil à follow : {W}").strip()
-    if not lien:
-        print(horloge(), color("[!] Lien invalide", "1;31"))
-        return
-
-    n_follow = int(input(f"{Y}Nombre de comptes pour follow : {W}"))
-    follows = 0
-    for data in comptes:
-        if follows >= n_follow: break
-        client = login_avec_settings(data)
-        if client:
-            if follow_user(client, lien):
-                activites.append(f"{data['username']} → FOLLOW OK")
-                follows += 1
+        titre_section("FOLLOW AUTO")
+        lien = input(f"{Y}Lien du profil à follow : {W}").strip()
+        if not lien:
+            print(horloge(), color("[!] Lien invalide", "1;31"))
+            return
+        n_follow = int(input(f"{Y}Nombre de comptes pour follow : {W}"))
+        follows = 0
+        for data in comptes:
+            if follows >= n_follow: break
+                client = login_avec_settings(data)
+            if client:
+                if follow_user(client, lien):
+                    activites.append(f"{data['username']} → FOLLOW OK")
+                    follows += 1
+                else:
+                    activites.append(f"{data['username']} → ECHEC FOLLOW")
             else:
-                activites.append(f"{data['username']} → ECHEC FOLLOW")
-        else:
-            activites.append(f"{data.get('username', '?')} → ECHEC CONNEXION")
+                activites.append(f"{data.get('username', '?')} → ECHEC CONNEXION")
 
     elif choix == "3":
         titre_section("PUBLICATION IMAGES")
