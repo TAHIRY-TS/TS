@@ -339,13 +339,13 @@ async def handler(event):
         # Cas 1 : Demande de sélection de compte
         if ("▪️ please give us your profile's username for tasks completing :" in msg or "⭕️ please choose account from the list" in msg):
             current_user = choisir_utilisateur_random_depuis_sessions_json()
-            print(horloge_prefix() + color(f"[🔐] Compte choisi : {current_user['username']}", "1;36"))
+            print(horloge_prefix() + color(f"[🔍] Recherche de tache pour: {current_user['username']}", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
             await client.send_message("SmmKingdomTasksBot", current_user['username'])
             return
 
         # Cas 2 : chose social network
-        if "Choose social network" in msg:
+        if "choose social network" in msg:
             print(horloge_prefix() + color("[🎯] Social network: instagram", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
             await client.send_message("SmmKingdomTasksBot", "instagram")
