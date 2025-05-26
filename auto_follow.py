@@ -69,10 +69,11 @@ def login_avec_settings(data):
             if key in data:
                 if key == "settings": cl.set_settings(data[key])
                 else: setattr(cl, key, data[key])
-        cl.login(data["username"], data["password"])
+        cl.login(data["username"], data["password"], data["settings"])
         return cl
     except Exception as e:
         ajouter_a_blacklist(data.get("username", "unknown"), str(e))
+        time.sleep(5)
         return None
 
 def liker_post(client, lien):
@@ -206,5 +207,14 @@ def main():
                 msg = f"{data['username']} → ECHEC CONNEXION"
                 activites.append(msg)
                 print(horloge(), color(msg, "1;31"))
+    elif choix == "0":
+        print(horloge(), color("Fermeture du programme...", "1;36"))
+        return
+
+    else:
+        print(horloge(), color("[!] Choix invalide", "1;31"))
+
+    enregistrer_rapport(activites)
+
 if __name__ == "__main__":
     main()
