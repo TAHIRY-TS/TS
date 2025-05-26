@@ -81,12 +81,28 @@ def check_and_create_ts_folder():
         print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
 
 def get_all_accounts():
-    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json")]
+    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
     comptes = []
     for i, f in enumerate(fichiers):
-        data = load_json(os.path.join(CONFIG_DIR, f))
-        if data.get("username") and (data.get("password") or data.get("authorization_data")):
-            comptes.append((i + 1, data['username'], data))
+        chemin = os.path.join(SESSION_DIR, f)
+        try:
+            with open(chemin, 'r') as file:
+                data = json.load(file)
+
+            # Vérifie que c'est bien un dictionnaire JSON
+            if isinstance(data, dict):
+                username = data.get("username")
+                password = data.get("password")
+                auth_data = data.get("authorization_data")
+
+                if username and (password or auth_data):
+                    comptes.append((i + 1, username, data))
+                else:
+                    print(f"{ts_time()}{Y}[!] Données incomplètes dans : {f}{W}")
+            else:
+                print(f"{ts_time()}{Y}[!] Format non valide (pas un objet JSON) : {f}{W}")
+        except Exception as e:
+            print(f"{ts_time()}{R}[!] Erreur lecture fichier {f} : {e}{W}")
     return comptes
 
 def choisir_comptes(comptes):
