@@ -346,9 +346,9 @@ async def handler(event):
 
         # Cas 2 : chose social network
         if "choose social network" in msg:
-            print(horloge_prefix() + color("[🎯] Social network: instagram", "1;36"))
+            print(horloge_prefix() + color("[🎯] Social network: Instagram", "1;36"))
             await asyncio.sleep(random.randint(5, 10))
-            await client.send_message("SmmKingdomTasksBot", "instagram")
+            await client.send_message("SmmKingdomTasksBot", "Instagram")
             return
             
         # Cas 2 : Aucune tâche active
