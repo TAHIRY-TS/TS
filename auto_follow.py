@@ -156,7 +156,7 @@ if __name__ == "__main__":
         choix = menu()
         if choix == '0':
             print(f"{ts_time()}{Y}Fermeture...{W}")
-            return
+            break
 
         compte = get_random_account()
         client = login_avec_settings(compte)
