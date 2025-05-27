@@ -86,10 +86,16 @@ def get_all_accounts():
     comptes = []
     for i, f in enumerate(fichiers):
         data = load_json(os.path.join(CONFIG_DIR, f))
-        if data.get("username") and (data.get("password") or data.get("authorization_data")):
-            comptes.append((i + 1, data['username'], data))
+        # Si data est une liste de comptes
+        if isinstance(data, list):
+            for compte in data:
+                if compte.get("username") and (compte.get("password") or compte.get("authorization_data")):
+                    comptes.append((len(comptes) + 1, compte['username'], compte))
+        # Sinon, c'est un seul compte
+        elif isinstance(data, dict):
+            if data.get("username") and (data.get("password") or data.get("authorization_data")):
+                comptes.append((len(comptes) + 1, data['username'], data))
     return comptes
-
 def choisir_comptes(comptes):
     print(f"{ts_time()}{C}--- Comptes disponibles ---{W}")
     for i, username, _ in comptes:
