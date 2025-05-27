@@ -14,7 +14,10 @@ G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\
 BASE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = BASE
 PROJECT_DIR = BASE
-IMAGE_DIR = os.path.join(BASE, 'images')
+storage_path = os.path.expanduser("~/storage")
+ts_path = os.path.join(storage_path, "shared", "TS images")
+
+IMAGE_DIR = ts_path
 SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
@@ -51,7 +54,25 @@ def load_json(path):
 def save_json(path, data):
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
+def check_and_create_ts_folder():
+    
+    # Vérification du stockage
+    if not os.path.isdir(storage_path):
+        print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
+        print(color("[+] Exécution de termux-setup-storage...", "1;34"))
+        subprocess.run(["termux-setup-storage"])
+        time.sleep(3)
 
+    # Vérification post-setup
+    if os.path.isdir(storage_path):
+        # Création du dossier TS/images/
+        if not os.path.exists(ts_path):
+            os.makedirs(ts_path)
+            print(color(f"[✔] Dossier TS images créé veuiller copier des images dans ce dossier à publier sur instagram ", "1;32"))
+        else:
+            print(color(f"[ℹ] Le dossier TS images dejà crée, veuillez copier dans ce dossier votre images à publier ", "1;36"))
+    else:
+        print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
 def extraire_username_depuis_lien(lien):
     try:
         path = urlparse(lien).path.strip('/')
@@ -141,6 +162,7 @@ def login_avec_settings(data):
         return client
     except Exception as e:
         print(f"{ts_time()}{R}[✗] Connexion échouée pour @{username} : {e}{W}")
+        time.sleep(4)
         return None
 
 def enregistrer_rapport(activites):
