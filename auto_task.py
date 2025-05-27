@@ -12,7 +12,7 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import events
 from instagrapi import Client as IGClient
-from generateur_session import verifier_et_corriger_fichiers
+from generateur_session.json import verifier_et_corriger_fichiers
 
 print("\033[?25l", end="", flush=True)  # Masquer le curseur
 # ---------- Utilitaires ----------
