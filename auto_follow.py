@@ -15,10 +15,7 @@ G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\
 BASE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = BASE
 PROJECT_DIR = BASE
-storage_path = os.path.expanduser("~/storage")
-ts_path = os.path.join(storage_path, "shared", "TS images")
-
-IMAGE_DIR = ts_path
+IMAGE_DIR = os.path.join(BASE, 'images')
 SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
