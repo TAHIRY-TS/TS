@@ -144,7 +144,8 @@ def main():
         time.sleep(4)
 
     device_settings = generate_device_settings()
-    uuids = generate_uuids()                                                                                  user_agent = generate_user_agent(device_settings)
+    uuids = generate_uuids()                                                                          
+    user_agent = generate_user_agent(device_settings)
     timestamp = time.time()
     
     data = {
@@ -154,7 +155,7 @@ def main():
         "ig_www_claim": None,
         "authorization_data": {
             "ds_user_id": str(uuid.uuid4().int)[:11],
-            "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24])"
+            "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
         },
         "cookies": {},
         "last_login": timestamp,
@@ -166,7 +167,7 @@ def main():
         "timezone_offset": -14400
     }
 
-    with open(filename, "w") as f:
+    with open(filepath, "w") as f:
         json.dump(data, f, indent=4)
 
     success(f"Compte {username} ajouté.")
