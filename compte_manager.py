@@ -266,6 +266,7 @@ def nettoyer_sessions_orphelines():
         info("\nAucune session orpheline.")
 
     safe_input("\nAppuyez sur Entrée pour revenir au menu...")
+    return nettoyer_sessions_orphelines()
 def supprimer_compte():
     fichiers = lister_comptes()
     if not fichiers:
@@ -278,13 +279,13 @@ def supprimer_compte():
     except (ValueError, IndexError):
         erreur("Choix invalide.")
         safe_input("\nAppuyez sur Entrée...")
-        return
+        return supprimer_compte()
 
     confirm = safe_input(f"Confirmer suppression de {username} ? (o/n): ").lower()
     if confirm != 'o':
         print("Annulé.")
         safe_input("\nAppuyez sur Entrée...")
-        return
+        return supprimer_compte()
 
     fichiers_cible = [
         os.path.join(CONFIG_DIR, f"{username}.json"),
