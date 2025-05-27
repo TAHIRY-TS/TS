@@ -145,7 +145,7 @@ def prepare_sessions_depuis_json():
                 print(horloge(), color(f"⛔ Fichier {fichier} incomplet (username/password manquant)", "1;31"))
                 continue
 
-            session_path = os.path.join(SESSION_DIR, f"{username}.session")
+            session_path = os.path.join(SESSION_DIR, f"{username}.json")
             if os.path.exists(session_path):
                 print(horloge(), color(f"Session déjà existante pour {username}", "1;33"))
                 continue
@@ -194,7 +194,7 @@ def prepare_sessions_depuis_json():
 def choisir_utilisateur_random_depuis_sessions_json():
     comptes_json = [f for f in os.listdir(BASE_DIR)
                     if f.endswith(".json")
-                    and f not in ("config.json", "selected_user.json", "blacklist.json")]
+                    and f not in ("config.json", "selected_user.json", "blacklist.json", "utilisateur.json")]
     comptes_valides = []
     for fichier in comptes_json:
         try:
@@ -203,32 +203,34 @@ def choisir_utilisateur_random_depuis_sessions_json():
             username = compte.get("username")
             if not username:
                 continue
-            session_path = os.path.join(SESSION_DIR, f"{username}.session")
+            session_path = os.path.join(SESSION_DIR, f"{username}.json")
             if os.path.exists(session_path):
                 comptes_valides.append((compte, session_path))
         except Exception:
             continue
 
     if not comptes_valides:
-        print(horloge(), color("Aucun compte valide avec session trouvé", "1;31"))
+        print(horloge(), color("⛔ Aucun compte valide avec session trouvée", "1;31"))
         return None
 
     compte_choisi, chemin_session = random.choice(comptes_valides)
-
-    with open(SELECTED_USER_PATH, "w") as f:
-        json.dump(compte_choisi, f, indent=4)
-
     username = compte_choisi["username"]
-    dest_session = os.path.join(SESSION_DIR, f"select_{username}.session")
-    try:
-        with open(chemin_session, "rb") as src, open(dest_session, "wb") as dst:
-            dst.write(src.read())
-    except Exception as e:
-        ajouter_a_blacklist(username, f"Erreur copie session: {str(e)}")
-        return None
 
-    print(horloge(), color(f"Utilisateur sélectionné : {username}", "1;32"))
-    return compte_choisi
+    try:
+        # Copier les données nécessaires dans selected_user.json (sans username/password)
+        with open(chemin_session, "r") as session_file:
+            session_data = json.load(session_file)
+
+        with open(SELECTED_USER_PATH, "w") as f:
+            json.dump(session_data, f, indent=4)
+
+        print(horloge(), color(f"✅ Utilisateur sélectionné : {username}", "1;32"))
+        return compte_choisi
+
+    except Exception as e:
+        ajouter_a_blacklist(username, f"Erreur lecture session: {str(e)}")
+        print(horloge(), color(f"❌ Erreur session pour {username} : {e}", "1;31"))
+        return None
 
 # ---------- Connexion Instagram ----------
 
@@ -237,44 +239,48 @@ def connexion_instagram(current_user):
         with open(SELECTED_USER_PATH, "r") as f:
             compte = json.load(f)
     except FileNotFoundError:
-        print(horloge(), color("Aucun compte sélectionné trouvé", "1;31"))
+        print(horloge(), color("⛔ Aucun compte sélectionné trouvé", "1;31"))
         return None
-    username = compte["username"]
-    session_path = os.path.join(SESSION_DIR, f"select_{username}.session")
+
+    username = compte.get("username")
+    if not username:
+        print(horloge(), color("⛔ Nom d'utilisateur manquant dans le fichier sélectionné", "1;31"))
+        return None
+
+    # Charger mot de passe depuis utilisateur.json
+    try:
+        with open(os.path.join(BASE_DIR, "utilisateur.json"), "r") as f:
+            utilisateurs = json.load(f)
+            password = utilisateurs.get(username)
+            if not password:
+                print(horloge(), color(f"⛔ Mot de passe introuvable pour {username} dans utilisateur.json", "1;31"))
+                return None
+    except Exception as e:
+        print(horloge(), color(f"⛔ Erreur chargement utilisateur.json : {e}", "1;31"))
+        return None
+
     cl = IGClient()
 
-    # Appliquer paramètres avancés
+    # Appliquer les paramètres de session sauvegardés
     try:
-        # Charger settings si existant dans le fichier JSON
         for key in ["settings", "authorization_data", "device_settings", "user_agent", "uuid", "uuids", "cookies"]:
             if key in compte:
                 if key == "settings":
                     cl.set_settings(compte[key])
-                elif key == "authorization_data":
-                    cl.authorization_data = compte[key]
-                elif key == "device_settings":
-                    cl.device_settings = compte[key]
-                elif key == "user_agent":
-                    cl.user_agent = compte[key]
-                elif key == "uuid":
-                    cl.uuid = compte[key]
-                elif key == "uuids":
-                    cl.uuids = compte[key]
-                
+                else:
+                    setattr(cl, key, compte[key])
     except Exception as e:
-        print(horloge(), color(f"Erreur lors de la configuration avancée IG : {e}", "1;31"))
+        print(horloge(), color(f"⛔ Erreur lors de l’application des paramètres : {e}", "1;31"))
 
+    # Test de validité session
     try:
-        cl.load_settings(session_path)
-        cl.login(compte["username"], compte["password"])
-        cl.dump_settings(session_path)
-        print(horloge(), color(f"Connecté à Instagram : {username}", "1;32"))
+        cl.get_timeline_feed()
+        print(horloge(), color(f" connecté : {username}", "1;32"))
         return cl
     except Exception as e:
         ajouter_a_blacklist(username, str(e))
-        print(horloge(), color(f"Erreur Instagram : {str(e)} (ajout à blacklist)", "1;31"))
+        print(horloge(), color(f"❌ Erreur Instagram : {e} (ajout à blacklist)", "1;31"))
         return None
-
 # ---------- Extraction & Action ----------
 
 def extraire_infos(msg):
