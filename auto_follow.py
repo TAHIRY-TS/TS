@@ -7,6 +7,7 @@ import subprocess
 from datetime import datetime
 from instagrapi import Client as IGClient
 from urllib.parse import urlparse
+from auto_task import connexion_instagram
 
 # Couleurs
 G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
@@ -141,6 +142,7 @@ def main():
     choix = input(f"{Y}Choix : {W}")
 
     comptes = charger_comptes()
+    current_user = None
     activites = []
 
     if choix == "1":
@@ -154,7 +156,7 @@ def main():
         likes = 0
         for data in comptes:
             if likes >= n_like: break
-            client = login_avec_settings(data)
+            client = connexion_instagram(current_user)
             if client:
                 if liker_post(client, lien):
                     activites.append(f"{data['username']} → LIKE OK")
@@ -173,7 +175,7 @@ def main():
         follows = 0
         for data in comptes:
             if follows >= n_follow: break
-            client = login_avec_settings(data)
+            client = connexion_instagram(current_user)
             if client:
                 if follow_user(client, lien):
                     activites.append(f"{data['username']} → FOLLOW OK")
@@ -206,7 +208,7 @@ def main():
 
         n_images = int(input(f"{Y}Nombre d'images par compte : {W}"))
         for data in comptes_selectionnes:
-            client = login_avec_settings(data)
+            client = connexion_instagram(current_user)
             if client:
                 publier_images(client, n_images)
                 msg = f"{data['username']}→{n_images} images publiées"
