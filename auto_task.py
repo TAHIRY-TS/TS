@@ -132,7 +132,7 @@ client = TelegramClient(StringSession(session_str), api_id, api_hash)
 def prepare_sessions_depuis_json():
     comptes_json = [f for f in os.listdir(BASE_DIR)
                     if f.endswith(".json")
-                    and f not in ("config.json", "selected_user.json", "blacklist.json")]
+                    and f not in ("config.json", "selected_user.json", "blacklist.json", "utilisateur.json")]
     for fichier in comptes_json:
         chemin_json = os.path.join(BASE_DIR, fichier)
         try:
