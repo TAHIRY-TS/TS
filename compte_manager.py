@@ -299,6 +299,7 @@ def supprimer_compte():
 
     log_action("supprimé", username)
     safe_input("\nAppuyez sur Entrée...")
+    return supprimer_compte()
 def menu():
     while True:
         clear()
