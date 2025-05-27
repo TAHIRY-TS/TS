@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime
 from instagrapi import Client as IGClient
 from urllib.parse import urlparse
-from auto_task import connexion_instagram
+from auto_task import connexion_instagram prepare_sessions_depuis_json
 
 # Couleurs
 G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
@@ -141,7 +141,7 @@ def main():
     print(f"{C}0{W} - Quitter\n")
     choix = input(f"{Y}Choix : {W}")
 
-    comptes = charger_comptes()
+    comptes = prepare_sessions_depuis_json()
     current_user = None
     activites = []
 
