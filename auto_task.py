@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import asyncio
+import shutil
 import random
 import webbrowser
 from datetime import datetime
@@ -191,46 +192,39 @@ def prepare_sessions_depuis_json():
             ajouter_a_blacklist(username if 'username' in locals() else fichier, str(e))
 
 def choisir_utilisateur_random_depuis_sessions_json():
-    comptes_json = [f for f in os.listdir(BASE_DIR)
-                    if f.endswith(".json")
-                    and f not in ("config.json", "selected_user.json", "blacklist.json", "utilisateur.json")]
-    comptes_valides = []
-    for fichier in comptes_json:
-        try:
-            with open(os.path.join(BASE_DIR, fichier), "r") as f:
-                compte = json.load(f)
-            username = compte.get("username")
-            if not username:
-                continue
-            session_path = os.path.join(SESSION_DIR, f"{username}.json")
-            if os.path.exists(session_path):
-                comptes_valides.append((compte, session_path))
-        except Exception:
-            continue
+    # Créer le dossier selected_user/ s'il n'existe pas
+    os.makedirs(SELECTED_USER_DIR, exist_ok=True)
 
-    if not comptes_valides:
-        print(horloge(), color("⛔ Aucun compte valide avec session trouvée", "1;31"))
+    # Récupérer les fichiers .json dans le dossier session/
+    sessions_disponibles = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json")]
+
+    if not sessions_disponibles:
+        print(horloge(), color("⛔ Aucun fichier de session trouvé dans le dossier 'session/'", "1;31"))
         return None
 
-    compte_choisi, chemin_session = random.choice(comptes_valides)
-    username = compte_choisi["username"]
+    # Choisir un fichier aléatoire
+    fichier_choisi = random.choice(sessions_disponibles)
+    username = os.path.splitext(fichier_choisi)[0]
+
+    chemin_source = os.path.join(SESSION_DIR, fichier_choisi)
+    chemin_destination = os.path.join(SELECTED_USER_DIR, fichier_choisi)
 
     try:
-        # Copier les données nécessaires dans selected_user.json (sans username/password)
-        with open(chemin_session, "r") as session_file:
-            session_data = json.load(session_file)
+        # Vider le dossier selected_user/
+        for f in os.listdir(SELECTED_USER_DIR):
+            chemin_fichier = os.path.join(SELECTED_USER_DIR, f)
+            if os.path.isfile(chemin_fichier):
+                os.remove(chemin_fichier)
 
-        with open(SELECTED_USER_PATH, "w") as f:
-            json.dump(session_data, f, indent=4)
+        # Copier la session sélectionnée
+        shutil.copy(chemin_source, chemin_destination)
 
-        print(horloge(), color(f"✅ Utilisateur sélectionné : {username}", "1;32"))
-        return compte_choisi
+        print(horloge(), color(f"✅ Utilisateur sélectionné aléatoirement : {username}", "1;32"))
+        return username
 
     except Exception as e:
-        ajouter_a_blacklist(username, f"Erreur lecture session: {str(e)}")
-        print(horloge(), color(f"❌ Erreur session pour {username} : {e}", "1;31"))
+        print(horloge(), color(f"❌ Erreur lors de la sélection : {e}", "1;31"))
         return None
-
 # ---------- Connexion Instagram ----------
 def connexion_instagram(current_user):
     try:
@@ -240,45 +234,40 @@ def connexion_instagram(current_user):
         print(horloge(), color("⛔ Aucun compte sélectionné trouvé", "1;31"))
         return None
 
-    username = session_data.get("username")
-    if not username:
-        print(horloge(), color("⛔ Nom d'utilisateur manquant dans le fichier sélectionné", "1;31"))
-        return None
+    # Le nom du fichier = username.json → extraire sans extension
+    selected_filename = os.path.basename(SELECTED_USER_PATH)
+    username = os.path.splitext(selected_filename)[0]
 
-    # 1. Charger les infos depuis {username}.json si présent
-    chemin_utilisateur = os.path.join(BASE_DIR, f"{username}.json")
-    compte_data = None
+    # Lire le mot de passe depuis utilisateur.json
+    chemin_utilisateur = os.path.join(BASE_DIR, "utilisateur.json")
+    password = None
     if os.path.exists(chemin_utilisateur):
         with open(chemin_utilisateur, "r") as f:
-            compte_data = json.load(f)
-    else:
-        # 2. Sinon chercher dans utilisateur.json
-        chemin_global = os.path.join(BASE_DIR, "utilisateur.json")
-        if os.path.exists(chemin_global):
-            with open(chemin_global, "r") as f:
-                liste = json.load(f)
-                for c in liste:
-                    if c.get("username") == username:
-                        compte_data = c
-                        break
+            liste = json.load(f)
+            for item in liste:
+                if username in item:
+                    password = item[username]
+                    break
 
-    if not compte_data:
-        print(horloge(), color(f"⛔ Aucun compte trouvé pour {username}", "1;31"))
-        return None
-
-    password = compte_data.get("password")
     if not password:
-        print(horloge(), color(f"⛔ Mot de passe manquant pour {username}", "1;31"))
+        print(horloge(), color(f"⛔ Mot de passe introuvable pour {username}", "1;31"))
         return None
 
     cl = IGClient()
     try:
-        # Charger settings de la session
+        # Charger les paramètres de session
         cl.load_settings(session_data)
 
+        # Si déjà connecté, inutile de relancer la connexion
+        if cl.user_id:
+            print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
+            return cl
+
+        # Sinon, essayer de se connecter avec le mot de passe
         cl.login(username, password)
         print(horloge(), color(f"✅ Connecté à Instagram : {username}", "1;32"))
         return cl
+
     except Exception as e:
         ajouter_a_blacklist(username, f"Connexion échouée : {e}")
         print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
