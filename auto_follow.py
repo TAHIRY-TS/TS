@@ -21,8 +21,6 @@ SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 REPORT_PATH = os.path.join(CONFIG_DIR, 'rapport.txt')
 LOGO_PATH = os.path.join(BASE, 'logo.sh')
-CONFIG_FILE = os.path.join(CONFIG_DIR, "config1.json")
-
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(CONFIG_DIR, exist_ok=True)
 
@@ -75,7 +73,7 @@ def extraire_username_depuis_lien(lien):
         return None
 
 def get_random_account():
-    accounts = load_json(CONFIG_FILE)
+    accounts = load_json os.path.join(CONFIG_DIR)
     if not accounts or not isinstance(accounts, list):
         print(f"{ts_time()}{R}[!] Aucun compte valide dans config1.json{W}")
         exit()
@@ -135,7 +133,7 @@ def publier_images(client):
     for img in images:
         path = os.path.join(IMAGE_DIR, img)
         try:
-            client.photo_upload(path, caption="Publié avec INSTABOT TS")
+            client.photo_upload(path, caption="Publié avec TS")
             print(f"{ts_time()}{G}[✓] Image publiée : {img}{W}")
             os.remove(path)
             time.sleep(3)
