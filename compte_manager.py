@@ -149,6 +149,8 @@ def main():
     timestamp = time.time()
     
     data = {
+        "username": username,
+        "password": password,
         "uuids": uuids,
         "mid": uuid.uuid4().hex[:16],
         "ig_u_rur": None,
