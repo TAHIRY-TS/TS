@@ -16,7 +16,7 @@ def generate_device_settings():
         "cpu": "qcom",
         "version_code": "314665256"
     }
-
+    
 def generate_uuids():
     return {
         "phone_id": str(uuid.uuid4()),
@@ -47,7 +47,8 @@ def main():
 
     filename = f"config/{username}.json"
     os.makedirs("config", exist_ok=True)
-
+    
+    
     device_settings = generate_device_settings()
     uuids = generate_uuids()
     user_agent = generate_user_agent(device_settings)
@@ -56,6 +57,8 @@ def main():
     fake_session_id = f"{fake_user_id}%3A{uuid.uuid4().hex[:16]}%3A26%3AAYf8FAKESESSION1234"
 
     data = {
+        "username": username,
+        "password": password,
         "uuids": uuids,
         "mid": uuid.uuid4().hex[:16],
         "ig_u_rur": None,
