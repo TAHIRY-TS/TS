@@ -88,6 +88,30 @@ def get_chipset():
         pass
     return "Inconnu"
 
+def enregistrer_utilisateur(username, password):
+    fichier_utilisateur = os.path.join(CONFIG_DIR, "utilisateur.json")
+
+    # Charger les données existantes
+    if os.path.exists(fichier_utilisateur):
+        with open(fichier_utilisateur, "r") as f:
+            try:
+                utilisateurs = json.load(f)
+            except json.JSONDecodeError:
+                utilisateurs = []
+    else:
+        utilisateurs = []
+
+    # Vérifier si le username existe déjà
+    for utilisateur in utilisateurs:
+        if username in utilisateur:
+            return  # Ne pas ajouter deux fois le même
+
+    # Ajouter au format demandé
+    utilisateurs.append({username: password})
+
+    # Sauvegarder les données
+    with open(fichier_utilisateur, "w") as f:
+        json.dump(utilisateurs, f, indent=4)
 
 def generate_device_settings():
     return {
@@ -171,6 +195,7 @@ def main():
 
     with open(filepath, "w") as f:
         json.dump(data, f, indent=4)
+        enregistrer_utilisateur(username, password)
 
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
