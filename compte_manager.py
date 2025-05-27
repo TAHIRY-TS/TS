@@ -133,13 +133,10 @@ def get_android_device_info():
         "tray_session_id": str(uuid.uuid4())
     }
 
-    mid: generate_mid(),
-    ig_u_rur: None,
-    ig_www_claim: "0",
     authorization_data = {
-            "ds_user_id": str(uuid.uuid4().int)[:11],
-            "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
-        }
+        "ds_user_id": str(uuid.uuid4().int)[:11],
+        "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
+    }
 
     device_settings = {
         "manufacturer": get_prop("ro.product.manufacturer"),
@@ -165,18 +162,20 @@ def get_android_device_info():
         "lang": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}")
     }
 
+    app_version = "328.0.0.0.48"  # Remplacez par la vraie version si vous l’avez
+
     user_agent = (
         f"Instagram {app_version} Android ({device_settings['android_version']}/{device_settings['android_release']}; "
         f"{device_settings['dpi']}; {device_settings['resolution']}; {device_settings['manufacturer']}; {device_settings['device']}; {device_settings['model']}; "
-        f"{device_settings['chipset']}; {device_settings['build_id']}; {device_settings['build_type']}; {device_settings['radio_version']}; us_US; 314665256)"
+        f"{device_settings['chipset']}; {device_settings['build_id']}; {device_settings['build_type']}; {device_settings['radio_version']}; us_US; {version_code})"
     )
 
     return {
         "uuids": uuids,
         "device_settings": device_settings,
-        "mid": mid,
-        "ig_u_rur": ig_u_rur,
-        "ig_www_claim": ig_www_claim,
+        "mid": generate_mid(),
+        "ig_u_rur": None,
+        "ig_www_claim": "0",
         "authorization_data": authorization_data,
         "user_agent": user_agent,
         "country": get_prop("persist.sys.country") or get_prop("ro.product.locale.region") or "FR",
