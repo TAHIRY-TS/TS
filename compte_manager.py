@@ -200,11 +200,13 @@ def creer_config():
 
     if not username or not password:
         erreur("Champs obligatoires.")
+        time.sleep(4)
         return creer_config()
 
     filepath = os.path.join(CONFIG_DIR, f"{username}.json")
     if os.path.exists(filepath):
         erreur("Ce compte existe déjà.")
+        time.sleep(4)
         return creer_config()
 
     info_data = get_android_device_info()
@@ -232,11 +234,12 @@ def creer_config():
 
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
-    return creer_config()
+    time.sleep(3)
+    return menu_retour_creer()
 
 
 def menu_retour_creer():
-    print("[1] Ajouter un autre compte ou [x] Retour au menu principal")
+    print("\n[1] Ajouter un autre compte ou [x] Retour au menu principal")
     choix = safe_input("Choix: ").strip().lower()
 
     if choix == '1':
