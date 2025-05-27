@@ -1,250 +1,104 @@
-import os
-import session
-import random
+import json
 import time
-import shutil
-import subprocess
+import random
+import re
+import os
+import uuid
+import hashlib
 from datetime import datetime
-from instagrapi import Client
-from urllib.parse import urlparse
-from auto_task import connexion_instagram
+from instagram_private_api import Client, ClientError, ClientCookieExpiredError, ClientLoginRequiredError
+import pickle
 
-# Couleurs terminal
-G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\033[94m'
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DIR = BASE
-PROJECT_DIR = BASE
-IMAGE_DIR = os.path.join(BASE, 'images')
-SESSION_DIR = os.path.join(BASE, 'sessions')
-SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
-REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
-LOGO_PATH = os.path.join(BASE, 'logo.sh')
-
+# === Chemins ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "config1.json")
+SESSION_DIR = os.path.join(PROJECT_ROOT, "sessions")
 os.makedirs(SESSION_DIR, exist_ok=True)
-def ts_time():
-    return f"{B}[TS {datetime.now().strftime('%H:%M')}] {W}"
 
-def titre_section(titre):
-    if os.path.exists(LOGO_PATH):
-        subprocess.call(['bash', LOGO_PATH])
-    largeur = 50
-    terminal_width = shutil.get_terminal_size().columns
-    padding = max((terminal_width - largeur) // 2, 0)
-    spaces = ' ' * padding
-    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
-    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
-    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
+def generate_device(account_username):
+    seed = hashlib.md5(account_username.encode()).hexdigest()
+    return {
+        'phone_id': str(uuid.uuid5(uuid.NAMESPACE_DNS, seed + 'phone')),
+        'device_id': f"android-{seed[:16]}",
+        'uuid': str(uuid.uuid5(uuid.NAMESPACE_DNS, seed + 'uuid')),
+        'session_id': str(uuid.uuid5(uuid.NAMESPACE_DNS, seed + 'session'))
+    }
 
-def titre_section1(titre):
-    largeur = 50
-    terminal_width = shutil.get_terminal_size().columns
-    padding = max((terminal_width - largeur) // 2, 0)
-    spaces = ' ' * padding
-    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
-    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
-    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
+def save_session(api, username):
+    session_path = os.path.join(SESSION_DIR, f"{username}.session")
+    with open(session_path, 'wb') as f:
+        pickle.dump(api.settings, f)
 
-def load_session(path):
-    return session.load(open(path)) if os.path.exists(path) else {}
+def load_session(username):
+    session_path = os.path.join(SESSION_DIR, f"{username}.session")
+    if os.path.exists(session_path):
+        with open(session_path, 'rb') as f:
+            return pickle.load(f)
+    return None
 
-def save_session(path, data):
-    with open(path, 'w') as f:
-        session.dump(data, f, indent=4)
-
-def extraire_username_depuis_lien(lien):
+def login(account):
+    device = generate_device(account['username'])
+    session_data = load_session(account['username'])
     try:
-        path = urlparse(lien).path.strip('/')
-        return path.split('/')[0]
-    except Exception as e:
-        print(f"{ts_time()}{R}[!] Erreur lien : {e}{W}")
-        return None
-        
-def color(msg, code):
-    return f"\033[{code}m{msg}\033[0m"
-
-def check_and_create_ts_folder():
-    storage_path = os.path.expanduser("~/storage")
-    ts_path = os.path.join(storage_path, "shared", "TS images")
-
-    # Vérification du stockage
-    if not os.path.isdir(storage_path):
-        print(color("[!] Le stockage n’est pas encore configuré.", "1;33"))
-        print(color("[+] Exécution de termux-setup-storage...", "1;34"))
-        subprocess.run(["termux-setup-storage"])
-        time.sleep(3)
-
-    # Vérification post-setup
-    if os.path.isdir(storage_path):
-        # Création du dossier TS/images/
-        if not os.path.exists(ts_path):
-            os.makedirs(ts_path)
-            print(color(f"[✔] Dossier TS images créé veuiller copier des images dans ce dossier à publier sur instagram ", "1;32"))
+        if session_data:
+            api = Client(account['username'], account['password'], settings=session_data)
         else:
-            print(color(f"[ℹ] Le dossier TS images dejà crée, veuillez copier dans ce dossier votre images à publier ", "1;36"))
-    else:
-        print(color("[✘] Le stockage n’a pas été configuré correctement.", "1;31"))
+            api = Client(account['username'], account['password'], device_id=device['device_id'])
+            save_session(api, account['username'])
+        return api
+    except (ClientCookieExpiredError, ClientLoginRequiredError):
+        # Si la session est expirée, refaire la connexion
+        api = Client(account['username'], account['password'], device_id=device['device_id'])
+        save_session(api, account['username'])
+        return api
+    except ClientError as e:
+        print(f"[ERREUR] {account['username']} : {e}")
+        return None
 
-
-def get_all_accounts():
-    fichiers = [f for f in os.listdir(SESSION_DIR) if f.endswith(".session")]
-    comptes = []
-    for i, f in enumerate(fichiers):
-        data = load_session(os.path.join(SESSION_DIR, f))
-        if data.get("username") and (data.get("password") or data.get("authorization_data")):
-            comptes.append((i + 1, data['username'], data))
-    return comptes
-
-def choisir_comptes(comptes):
-    print(f"{ts_time()}{C}----- Comptes disponibles -----{W}")
-    for i, username, _ in comptes:
-        print(f"{Y}{i}.{W} {username}")
-    indexes = input(f"{ts_time()}{C}Entrez les numéros des comptes à utiliser (séparés par des virgules) : {W}").strip()
-    selection = []
+def follow_user(api, target_username, account_username):
     try:
-        for index in indexes.split(','):
-            num = int(index.strip())
-            match = next((compte for compte in comptes if compte[0] == num), None)
-            if match: selection.append((match[1], match[2]))
-    except Exception:
-        print(f"{ts_time()}{R}[!] Mauvais choix.{W}")
-        exit()
-    return selection
+        user_info = api.username_info(target_username)
+        user_id = user_info['user']['pk']
+        if user_info['user']['followed_by_viewer']:
+            print(f"[INFO] {account_username} est déjà abonné à {target_username}")
+            return "deja"
+        api.friendships_create(user_id)
+        print(f"[OK] {account_username} a suivi {target_username}")
+        return "suivi"
+    except ClientError as e:
+        print(f"[ERREUR] {account_username} : {e}")
+        return "erreur"
 
-def follow_user(client, username_cible):
-    try:
-        user_id = client.user_id_from_username(username_cible)
-        suivi = client.user_following(client.user_id)
-        if user_id in suivi:
-            print(f"{ts_time()}{Y}[-] Déjà suivi : @{username_cible}, on ignore{W}")
-            return False
-        client.user_follow(user_id)
-        print(f"{ts_time()}{G}[✓] Follow : @{username_cible}{W}")
-        return True
-    except Exception as e:
-        print(f"{ts_time()}{R}[✗] Erreur follow @{username_cible} : {e}{W}")
-        return False
+# === Principal ===
+def main():
+    with open(CONFIG_PATH, "r") as f:
+        accounts = json.load(f)["utilisateurs"]
 
-def publier_images(client, nombre_images):
-    if not os.path.exists(ts_path):
-        print(f"{ts_time()}{R}[!] Dossier TS images introuvable : {IMAGE_DIR}{W}")
+    url = input("Colle le lien Instagram cible : ").strip()
+    target_username = re.match(r'https?://(www\.)?instagram\.com/([^/?#&]+)', url)
+    if not target_username:
+        print("[!] Lien invalide.")
         return
+    target_username = target_username.group(2)
 
-    images = [os.path.join(IMAGE_DIR, img) for img in os.listdir(IMAGE_DIR) if img.lower().endswith((".jpg", ".png", ".jpeg"))]
-    if not images:
-        print(f"{ts_time()}{R}[!] Aucune image trouvée dans {IMAGE_DIR}{W}")
-        return
+    nb_followers = int(input("Nombre de comptes à utiliser : "))
 
-    random.shuffle(images)
-    images = images[:nombre_images]
-    for image_path in images:
-        caption = f"Auto-post - {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
-        try:
-            client.photo_upload(image_path, caption)
-            print(f"{ts_time()}{G}[✓] Publiée : {os.path.basename(image_path)}{W}")
-        except Exception as e:
-            print(f"{ts_time()}{R}[✗] Erreur publication : {e}{W}")
+    random.shuffle(accounts)
+    success = 0
 
-def liker_post(client, lien_post):
-    try:
-        code = lien_post.strip('/').split('/')[-1]
-        media_id = client.media_id(code)
-        client.media_like(media_id)
-        print(f"{ts_time()}{G}[✓] Like : {lien_post}{W}")
-        return True
-    except Exception as e:
-        print(f"{ts_time()}{R}[✗] Erreur like : {e}{W}")
-        return False
+    for acc in accounts:
+        if success >= nb_followers:
+            break
+        api = login(acc)
+        if not api:
+            continue
+        result = follow_user(api, target_username, acc['username'])
+        if result == "suivi":
+            success += 1
+        time.sleep(random.randint(5, 10))
 
-def enregistrer_rapport(activites):
-    os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
-    with open(REPORT_PATH, 'w') as f:
-        for log in activites:
-            f.write(log + "\n")
-    print(f"{ts_time()}{C}[✓] Rapport enregistré dans {REPORT_PATH}{W}")
-
-def menu():
-    
-    titre_section("INSTABOT FINAL - BY TS")
-    print(f"{Y}\n1.{W} Follow auto")
-    print(f"{Y}2.{W} Like auto")
-    print(f"{Y}3.{W} Publication d'image")
-    print(f"{Y}0.{W} Quitter")
-    return input(f"{C}\nVotre choix : {W}").strip()
+    print(f"[FIN] {success} comptes ont suivi {target_username}")
 
 if __name__ == "__main__":
-    check_and_create_ts_folder()
-    activites = []
-    choix = menu()
-    comptes_dispo = get_all_accounts()
-
-    if not comptes_dispo:
-        print(f"{ts_time()}{R}[!] Aucun compte trouvé dans {CONFIG_DIR}{W}")
-        exit()
-
-    comptes_utilises = choisir_comptes(comptes_dispo)
-
-    if choix == "1":
-        titre_section1("FOLLOW AUTO")
-        lien = input(f"{Y}\nLien du profil à suivre : {W}").strip()
-        cible = extraire_username_depuis_lien(lien)
-        if not cible:
-            print(f"{ts_time()}{R}[!] Utilisateur invalide.{W}")
-            exit()
-
-        n_follow = int(input(f"{Y}Nombre de comptes pour suivre la cible : {W}"))
-        suivis = 0
-
-        for username, data in comptes_utilises:
-            if suivis >= n_follow: break
-            client = connexion_instagram()
-            if client:
-                resultat = follow_user(client, cible)
-                if resultat:
-                    suivis += 1
-                    activites.append(f"{username} → FOLLOW @{cible}")
-                else:
-                    activites.append(f"{username} → DÉJÀ FOLLOW @{cible}")
-            else:
-                activites.append(f"{username} → ECHEC CONNEXION")
-
-    elif choix == "3":
-        titre_section1("PUBLICATION AUTO")
-        n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
-        for username, data in comptes_utilises:
-            client = connexion_instagram()
-            if client:
-                publier_images(client, n_img)
-                activites.append(f"{username} → PUBLIÉ {n_img} images")
-            else:
-                activites.append(f"{username} → ECHEC CONNEXION")
-
-    elif choix == "2":
-        titre_section1("LIKE AUTO")
-        lien = input(f"{Y}\nLien du post à liker : {W}").strip()
-        n_like = int(input(f"{Y}Nombre de comptes pour liker ce post : {W}"))
-        likes = 0
-
-        for username, data in comptes_utilises:
-            if likes >= n_like: break
-            client = connexion_instagram()
-            if client:
-                resultat = liker_post(client, lien)
-                if resultat:
-                    likes += 1
-                    activites.append(f"{username} → LIKE {lien}")
-                else:
-                    activites.append(f"{username} → ECHEC LIKE")
-            else:
-                activites.append(f"{username} → ECHEC CONNEXION")
-
-    elif choix == "0":
-        for i in range(3, 0, -1):
-            print(f"\033[1;36mRetour à l'accueil dans {i} secondes ...\033[0m", end='\r')
-            time.sleep(1)
-        os.execvp("bash", ["bash", os.path.join(PROJECT_DIR, "start.sh")])
-    else:
-        print(f"{R}[!] Choix invalide.{W}")
-        exit()
-
-    enregistrer_rapport(activites)
+    main()
