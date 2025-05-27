@@ -12,6 +12,7 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import events
 from instagrapi import Client as IGClient
+from generateur_session import verifier_et_corriger_fichiers
 
 print("\033[?25l", end="", flush=True)  # Masquer le curseur
 # ---------- Utilitaires ----------
@@ -417,7 +418,7 @@ async def handler(event):
 if __name__ == "__main__":
     print(horloge() + color("🔄 Préparation des données...", "1;33"))
     try:
-        prepare_sessions_depuis_json()
+        verifier_et_corriger_fichiers()
         print(horloge() + color("✅ Données de session prêtes", "1;32"))
         print(horloge() + color("🚀 Lancement du bot...", "1;36"))
 
