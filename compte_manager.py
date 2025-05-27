@@ -187,19 +187,25 @@ def get_android_device_info():
 def creer_config():
     clear()
     titre_section("AJOUTER UN COMPTE")
-    username = safe_input("Nom d'utilisateur Instagram: ").strip()
-    password = safe_input("Mot de passe: ").strip()
+
+    username = safe_input("Nom Instagram : ").strip()
+    if username.lower() == 'x':
+        print("Opération annulée.")
+        return
+
+    password = safe_input("Mot de passe : ").strip()
+    if password.lower() == 'x':
+        print("Opération annulée.")
+        return
 
     if not username or not password:
-        erreur("Champs obligatoires vides.")
-        safe_input("\nAppuyez sur Entrée...")
-        return
+        erreur("Champs obligatoires.")
+        return creer_config()
 
     filepath = os.path.join(CONFIG_DIR, f"{username}.json")
     if os.path.exists(filepath):
         erreur("Ce compte existe déjà.")
-        safe_input("\nAppuyez sur Entrée...")
-        return
+        return creer_config()
 
     info_data = get_android_device_info()
 
@@ -226,8 +232,20 @@ def creer_config():
 
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
-    safe_input("\nAppuyez sur Entrée...")
+    return creer_config()
 
+
+def menu_retour_creer():
+    print("[1] Ajouter un autre compte ou [x] Retour au menu principal")
+    choix = safe_input("Choix: ").strip().lower()
+
+    if choix == '1':
+        return creer_config()
+    elif choix == 'x':
+        return  # Quitte la fonction, retour au menu principal
+    else:
+        erreur("Choix invalide.")
+        return menu_retour_creer()
 def lister_comptes():
     clear()
     fichiers = sorted([
@@ -273,31 +291,47 @@ def supprimer_compte():
         safe_input("\nAppuyez sur Entrée...")
         return
 
+    print("\nEntrez les numéros des comptes à supprimer (séparés par des virgules), ou 'x' pour quitter.")
+    print("Exemple: 1,3,5")
+    choix = safe_input(">>> ").strip().lower()
+
+    if choix == 'x':
+        print("Opération annulée.")
+        return
+
     try:
-        choix = int(safe_input("\nNuméro du compte à supprimer: "))
-        username = fichiers[choix - 1].replace('.json', '')
+        index_list = [int(c.strip()) - 1 for c in choix.split(',') if c.strip().isdigit()]
+        usernames = [fichiers[i].replace('.json', '') for i in index_list if 0 <= i < len(fichiers)]
     except (ValueError, IndexError):
-        erreur("Choix invalide.")
-        safe_input("\nAppuyez sur Entrée...")
+        erreur("Entrée invalide.")
         return supprimer_compte()
 
-    confirm = safe_input(f"Confirmer suppression de {username} ? (o/n): ").lower()
+    if not usernames:
+        erreur("Aucun compte valide sélectionné.")
+        return supprimer_compte()
+
+    print("\nComptes sélectionnés:")
+    for user in usernames:
+        print(f"- {user}")
+
+    confirm = safe_input("Confirmer suppression ? (o/n): ").strip().lower()
     if confirm != 'o':
         print("Annulé.")
-        safe_input("\nAppuyez sur Entrée...")
         return supprimer_compte()
 
-    fichiers_cible = [
-        os.path.join(CONFIG_DIR, f"{username}.json"),
-        os.path.join(SESSION_DIR, f"{username}.session")
-    ]
+    for username in usernames:
+        fichiers_cible = [
+            os.path.join(CONFIG_DIR, f"{username}.json"),
+            os.path.join(SESSION_DIR, f"{username}.session")
+        ]
 
-    for f in fichiers_cible:
-        if os.path.exists(f):
-            os.remove(f)
-            print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m {f}")
+        for f in fichiers_cible:
+            if os.path.exists(f):
+                os.remove(f)
+                print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m {f}")
 
-    log_action("supprimé", username)
+        log_action("supprimé", username)
+
     safe_input("\nAppuyez sur Entrée...")
     return supprimer_compte()
 def menu():
