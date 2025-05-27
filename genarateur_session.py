@@ -1,4 +1,3 @@
-                                         test2.py
 import os
 import json
 import time
