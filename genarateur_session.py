@@ -6,9 +6,10 @@ from datetime import datetime
 from instagrapi import Client
 
 # Répertoires
-BASE_DIR = "config"
-SESSION_DIR = "sessions"
-LOG_DIR = "logs"                                                                                                                                        MAX_ESSAIS = 3
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = PROJECT_DIR
+SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
+LOG_DIR = os.path.join(PROJECT_DIR, 'logs')                                                                                                                                     MAX_ESSAIS = 3
 
 os.makedirs(BASE_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
