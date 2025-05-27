@@ -294,6 +294,11 @@ def supprimer_compte():
         safe_input("\nAppuyez sur Entrée...")
         return
 
+    print("\n\033[1;33mListe des comptes disponibles :\033[0m")
+    for idx, f in enumerate(fichiers, 1):
+        nom = f.replace('.json', '')
+        print(f"\033[1;33m[{idx}]\033[0m {nom}")
+
     print("\nEntrez les numéros des comptes à supprimer (séparés par des virgules), ou 'x' pour quitter.")
     print("Exemple: 1,3,5")
     choix = safe_input(">>> ").strip().lower()
@@ -313,9 +318,9 @@ def supprimer_compte():
         erreur("Aucun compte valide sélectionné.")
         return supprimer_compte()
 
-    print("\nComptes sélectionnés:")
+    print("\n\033[1;33mComptes sélectionnés :\033[0m")
     for user in usernames:
-        print(f"- {user}")
+        print(f"\033[1;33m- {user}\033[0m")
 
     confirm = safe_input("Confirmer suppression ? (o/n): ").strip().lower()
     if confirm != 'o':
