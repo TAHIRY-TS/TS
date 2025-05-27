@@ -217,7 +217,7 @@ def lister_comptes():
     clear()
     fichiers = sorted([
         f for f in os.listdir(CONFIG_DIR)
-        if f.endswith('.json') and '_session' not in f and f not in ['config.json', 'selected_user.json']
+        if f.endswith('.json') and '_session' not in f and f not in ['config.json', 'selected_user.json', "utilisateur.json"]
     ])
     titre_section("COMPTES ENREGISTRÉS")
 
