@@ -15,69 +15,13 @@ os.makedirs(BASE_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# Structures par défaut
-defaut_structure = {
-    "username": "",
-    "password": "",
-    "settings": {
-        "authorization_data": {
-            "ds_user_id": "",
-            "sessionid": "",
-            "csrftoken": ""
-        },
-        "device_settings": {
-            "phone_manufacturer": "",
-            "phone_model": "",
-            "android_version": 0,
-            "android_release": ""
-        },
-        "user_agent": "",
-        "uuid": "",
-        "uuids": {
-            "phone_id": "",
-            "advertising_id": "",
-            "session_id": ""
-        },
-        "cookies": {}
-    },
-    "authorization_data": {},
-    "device_settings": {},
-    "user_agent": "",
-    "uuid": "",
-    "uuids": {},
-    "cookies": {}
-}
-
 # Utilitaires
 def heure(): return datetime.now().strftime("%H:%M:%S")
 
 def log_supprime(username):
     with open(os.path.join(LOG_DIR, "supprimes.log"), "a") as log:
         log.write(f"{username}\n")
-
-def corriger_json(compte):
-    modifie = False
-    for cle, valeur_defaut in defaut_structure.items():
-        if cle not in compte:
-            compte[cle] = valeur_defaut
-            modifie = True
-        elif isinstance(valeur_defaut, dict):
-            for sous_cle, val_sous_defaut in valeur_defaut.items():
-                if isinstance(val_sous_defaut, dict):
-                    if sous_cle not in compte[cle]:
-                        compte[cle][sous_cle] = val_sous_defaut
-                        modifie = True
-                    else:
-                        for k, v in val_sous_defaut.items():
-                            if k not in compte[cle][sous_cle]:
-                                compte[cle][sous_cle][k] = v
-                                modifie = True
-                else:
-                    if sous_cle not in compte[cle]:
-                        compte[cle][sous_cle] = val_sous_defaut
-                        modifie = True
-    return compte, modifie
-
+        
 # Connexion avec restauration ou logi
 def tentative_connexion(username, password):
     client = Client()
@@ -122,7 +66,7 @@ def verifier_et_corriger_fichiers():
         print(f"[{heure()}] \033[1;31mAucun fichier trouvé dans config/\033[0m")
         return
 
-    corriges, complets, erreurs = [], [], []
+    complets, erreurs = [], [], []
 
     for fichier in fichiers:
         chemin = os.path.join(BASE_DIR, fichier)
@@ -131,25 +75,12 @@ def verifier_et_corriger_fichiers():
                 data = json.load(f)
             username = data.get("username", "")
             password = data.get("password", "")
-            data_corrige, modifie = corriger_json(data)
-            if modifie:
-                with open(chemin, "w") as f:
-                    json.dump(data_corrige, f, indent=4)
-                print(f"[{heure()}] \033[1;33mCorrigé : {fichier}\033[0m")
-                corriges.append(fichier)
-            else:
-                print(f"[{heure()}] \033[1;32mComplet : {fichier}\033[0m")
-                complets.append(fichier)
-
+            
             if username and password:
                 tentative_connexion(username, password)
         except Exception as e:
             print(f"[{heure()}] \033[1;31mErreur fichier {fichier} : {e}\033[0m")
             erreurs.append(fichier)
-
-    print(f"\n\033[1;35mRésumé :\033[0m")
-    print(f"\033[1;33m Corrigés : {len(corriges)}\033[0m")
-    print(f"\033[1;32m Complets : {len(complets)}\033[0m")
     print(f"\033[1;31m Erreurs  : {len(erreurs)}\033[0m")
 
 # Création manuelle
