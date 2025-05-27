@@ -25,11 +25,6 @@ os.makedirs(LOG_DIR, exist_ok=True)
 open(LOG_FILE, 'a').close()
 os.chmod(LOG_FILE, 0o600)
 
-app_version = "327.0.0.18.75"
-
-def normalize_locale(locale):
-    return locale.replace('-', '_') if locale else "fr_FR"
-
 def check_cmd(cmd):
     return shutil.which(cmd) is not None
 
@@ -81,21 +76,6 @@ def get_prop(prop):
     except Exception:
         return ''
 
-def generate_mid():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=24))
-
-def refresh_rate():
-    try:
-        output = subprocess.check_output(["dumpsys", "display"], encoding="utf-8")
-        match = re.search(r'(?i)RefreshRate:\s*([\d.]+)', output)
-        if not match:
-            match = re.search(r'(?i)mode\s+\d+:\s+\d+x\d+\s+@\s+([\d.]+)Hz', output)
-        if match:
-            return f"{float(match.group(1)):.0f}Hz"
-    except:
-        pass
-    return "60Hz"
-
 def get_chipset():
     try:
         props = subprocess.check_output(['getprop'], encoding='utf-8')
@@ -108,129 +88,86 @@ def get_chipset():
         pass
     return "Inconnu"
 
-def get_android_device_info():
-    try:
-        dumpsys = subprocess.check_output(["dumpsys", "package", "com.instagram.android"], encoding='utf-8')
-        version_code = re.search(r'versionCode=(\d+)', dumpsys).group(1)
-    except:
-        version_code = "314665256"
 
-    try:
-        resolution = re.search(r'Physical size: (\d+x\d+)', subprocess.check_output(["wm", "size"], encoding='utf-8')).group(1)
-        dpi = f"{re.search(r'Physical density: (\d+)', subprocess.check_output(["wm", "density"], encoding='utf-8')).group(1)}dpi"
-    except:
-        resolution, dpi = "1080x2400", "420dpi"
+def generate_device_settings():
+    return {
+        "app_version": "269.0.0.18.75",
+        "android_version": int(get_prop("ro.build.version.sdk") or 33),
+        "android_release": get_prop("ro.build.version.release"),
+        "dpi": "480dpi",
+        "resolution": "1080x1920",
+        "manufacturer": get_prop("ro.product.manufacturer"),
+        "device": get_prop("ro.product.device"),
+        "model": get_prop("ro.product.model"),
+        "cpu": get_prop("ro.product.board"),
+        "version_code": "314665256"
+    }
 
-    tz_offset = int(datetime.now(timezone.utc).astimezone().utcoffset().total_seconds())
-
-    uuids = {
+def generate_uuids():
+    return {
         "phone_id": str(uuid.uuid4()),
         "uuid": str(uuid.uuid4()),
         "client_session_id": str(uuid.uuid4()),
         "advertising_id": str(uuid.uuid4()),
-        "android_device_id": "android-" + uuid.uuid4().hex[:16],
+        "android_device_id": f"android-{uuid.uuid4().hex[:16]}",
         "request_id": str(uuid.uuid4()),
         "tray_session_id": str(uuid.uuid4())
     }
 
-    authorization_data = {
-        "ds_user_id": str(uuid.uuid4().int)[:11],
-        "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
-    }
-
-    device_settings = {
-        "manufacturer": get_prop("ro.product.manufacturer"),
-        "model": get_prop("ro.product.model"),
-        "device": get_prop("ro.product.device"),
-        "android_version": int(get_prop("ro.build.version.sdk") or 33),
-        "android_release": get_prop("ro.build.version.release"),
-        "android_version_code": version_code,
-        "dpi": dpi,
-        "resolution": resolution,
-        "chipset": get_chipset(),
-        "refresh_rate": refresh_rate(),
-        "cpu": get_prop("ro.product.board"),
-        "board": get_prop("ro.product.board"),
-        "bootloader": get_prop("ro.bootloader") or "unknown",
-        "brand": get_prop("ro.product.brand"),
-        "product": get_prop("ro.product.name"),
-        "fingerprint": get_prop("ro.build.fingerprint"),
-        "radio_version": get_prop("gsm.version.baseband"),
-        "build_id": get_prop("ro.build.display.id"),
-        "build_tags": get_prop("ro.build.tags"),
-        "build_type": get_prop("ro.build.type"),
-        "lang": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}")
-    }
-
-    app_version = "328.0.0.0.48"  # Remplacez par la vraie version si vous l’avez
-
-    user_agent = (
-        f"Instagram {app_version} Android ({device_settings['android_version']}/{device_settings['android_release']}; "
-        f"{device_settings['dpi']}; {device_settings['resolution']}; {device_settings['manufacturer']}; {device_settings['device']}; {device_settings['model']}; "
-        f"{device_settings['chipset']}; {device_settings['build_id']}; {device_settings['build_type']}; {device_settings['radio_version']}; us_US; {version_code})"
+def generate_user_agent(settings):
+    return (
+        f"Instagram {settings['app_version']} Android "
+        f"({settings['android_version']}/{settings['android_release']}; "
+        f"{settings['dpi']}; {settings['resolution']}; {settings['manufacturer']}; "
+        f"{settings['model']}; {settings['device']}; {settings['cpu']}; "
+        f"en_US; {settings['version_code']})"
     )
 
-    return {
-        "uuids": uuids,
-        "device_settings": device_settings,
-        "mid": generate_mid(),
-        "ig_u_rur": None,
-        "ig_www_claim": "0",
-        "authorization_data": authorization_data,
-        "user_agent": user_agent,
-        "country": get_prop("persist.sys.country") or get_prop("ro.product.locale.region") or "FR",
-        "country_code": 1,
-        "locale": normalize_locale(get_prop("persist.sys.locale") or f"{get_prop('persist.sys.language')}_{get_prop('persist.sys.country')}"),
-        "timezone_offset": tz_offset
-    }
-
-def creer_config():
+def main():
     clear()
     titre_section("AJOUTER UN COMPTE")
-
     username = safe_input("Nom Instagram : ").strip()
     if username.lower() == 'x':
         print("Opération annulée.")
         return
-
     password = safe_input("Mot de passe : ").strip()
     if password.lower() == 'x':
         print("Opération annulée.")
-        return
-
+        return 
+        
     if not username or not password:
-        erreur("Champs obligatoires.")
-        time.sleep(4)
-        return creer_config()
-
+        print("Erreur : Nom d'utilisateur et mot de passe requis.")
+        return main()
     filepath = os.path.join(CONFIG_DIR, f"{username}.json")
     if os.path.exists(filepath):
         erreur("Ce compte existe déjà.")
         time.sleep(4)
-        return creer_config()
 
-    info_data = get_android_device_info()
-
-    profile = {
-        "username": username,
-        "password": password,
-        "uuids": info_data["uuids"],
-        "mid": info_data["mid"],
-        "ig_u_rur": info_data["ig_u_rur"],
-        "ig_www_claim": info_data["ig_www_claim"],
-        "authorization_data": info_data["authorization_data"],
+    device_settings = generate_device_settings()
+    uuids = generate_uuids()                                                                                  user_agent = generate_user_agent(device_settings)
+    timestamp = time.time()
+    
+    data = {
+        "uuids": uuids,
+        "mid": uuid.uuid4().hex[:16],
+        "ig_u_rur": None,
+        "ig_www_claim": None,
+        "authorization_data": {
+            "ds_user_id": str(uuid.uuid4().int)[:11],
+            "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24])"
+        },
         "cookies": {},
-        "last_login": datetime.now().timestamp(),
-        "device_settings": info_data["device_settings"],
-        "user_agent": info_data["user_agent"],
-        "country": info_data["country"],
-        "country_code": info_data["country_code"],
-        "locale": info_data["locale"],
-        "timezone_offset": info_data["timezone_offset"],
+        "last_login": timestamp,
+        "device_settings": device_settings,
+        "user_agent": user_agent,
+        "country": "US",
+        "country_code": 1,
+        "locale": "en_US",
+        "timezone_offset": -14400
     }
 
-    with open(filepath, 'w') as f:
-        json.dump(profile, f, indent=4)
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
 
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
@@ -238,12 +175,34 @@ def creer_config():
     return menu_retour_creer()
 
 
+
+
+
+
+
+
+    
+
+    if not username or not password:
+        erreur("Champs obligatoires.")
+        time.sleep(4)
+        return creer_config()
+
+    
+        return creer_config()
+
+    with open(filepath, 'w') as f:
+        json.dump(profile, f, indent=4)
+
+    
+
+
 def menu_retour_creer():
     print("\n[1] Ajouter un autre compte ou [x] Retour au menu principal")
     choix = safe_input("Choix: ").strip().lower()
 
     if choix == '1':
-        return creer_config()
+        return main()
     elif choix == 'x':
         return  # Quitte la fonction, retour au menu principal
     else:
@@ -348,7 +307,7 @@ def menu():
         choix = safe_input("\nChoix: ")
 
         if choix == '1':
-            creer_config()
+            main()
         elif choix == '2':
             lister_comptes()
             safe_input("\nAppuyez sur Entrée...")
