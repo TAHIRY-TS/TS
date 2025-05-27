@@ -289,18 +289,12 @@ def nettoyer_sessions_orphelines():
     safe_input("\nAppuyez sur Entrée pour revenir au menu...")
     return nettoyer_sessions_orphelines()
 def supprimer_compte():
-    fichiers = lister_comptes()
-    if not fichiers:
-        safe_input("\nAppuyez sur Entrée...")
-        return
-
     print("\n\033[1;33mListe des comptes disponibles :\033[0m")
     for idx, f in enumerate(fichiers, 1):
         nom = f.replace('.json', '')
         print(f"\033[1;33m[{idx}]\033[0m {nom}")
 
-    print("\nEntrez les numéros des comptes à supprimer (séparés par des virgules), ou 'x' pour quitter.")
-    print("Exemple: 1,3,5")
+    print("\n\033[1;35mEntrez les numéros des comptes à supprimer (ex: 1 ou 1,2,3), ou 'x' pour quitter.\033[0m")
     choix = safe_input(">>> ").strip().lower()
 
     if choix == 'x':
