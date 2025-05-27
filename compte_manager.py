@@ -329,7 +329,7 @@ def supprimer_compte():
         for f in fichiers_cible:
             if os.path.exists(f):
                 os.remove(f)
-                print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m compte {username} été supprimé")
+        print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m Compte \033[1;33m{username}\033[0m a été supprimé.")
 
         log_action("supprimé", username)
 
