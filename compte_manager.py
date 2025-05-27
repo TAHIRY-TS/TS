@@ -291,7 +291,7 @@ def nettoyer_sessions_orphelines():
     safe_input("\nAppuyez sur Entrée pour revenir au menu...")
     return nettoyer_sessions_orphelines()
 def supprimer_compte():
-    fichier = lister_comptes()
+    fichiers = lister_comptes()
 
     print("\n\033[1;35mEntrez les numéros des comptes à supprimer (ex: 1 ou 1,2,3), ou 'x' pour quitter.\033[0m")
     choix = safe_input(">>> ").strip().lower()
@@ -329,7 +329,7 @@ def supprimer_compte():
         for f in fichiers_cible:
             if os.path.exists(f):
                 os.remove(f)
-                print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m {f}")
+                print(f"\n\033[1;31m[SUPPRIMÉ]\033[0m compte {username} été supprimé")
 
         log_action("supprimé", username)
 
