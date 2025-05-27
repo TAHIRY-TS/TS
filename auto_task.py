@@ -233,53 +233,56 @@ def choisir_utilisateur_random_depuis_sessions_json():
         return None
 
 # ---------- Connexion Instagram ----------
-
 def connexion_instagram(current_user):
     try:
         with open(SELECTED_USER_PATH, "r") as f:
-            compte = json.load(f)
+            session_data = json.load(f)
     except FileNotFoundError:
         print(horloge(), color("⛔ Aucun compte sélectionné trouvé", "1;31"))
         return None
 
-    username = compte.get("username")
+    username = session_data.get("username")
     if not username:
         print(horloge(), color("⛔ Nom d'utilisateur manquant dans le fichier sélectionné", "1;31"))
         return None
 
-    # Charger mot de passe depuis utilisateur.json
-    try:
-        with open(os.path.join(BASE_DIR, "utilisateur.json"), "r") as f:
-            utilisateurs = json.load(f)
-            password = utilisateurs.get(username)
-            if not password:
-                print(horloge(), color(f"⛔ Mot de passe introuvable pour {username} dans utilisateur.json", "1;31"))
-                return None
-    except Exception as e:
-        print(horloge(), color(f"⛔ Erreur chargement utilisateur.json : {e}", "1;31"))
+    # 1. Charger les infos depuis {username}.json si présent
+    chemin_utilisateur = os.path.join(BASE_DIR, f"{username}.json")
+    compte_data = None
+    if os.path.exists(chemin_utilisateur):
+        with open(chemin_utilisateur, "r") as f:
+            compte_data = json.load(f)
+    else:
+        # 2. Sinon chercher dans utilisateur.json
+        chemin_global = os.path.join(BASE_DIR, "utilisateur.json")
+        if os.path.exists(chemin_global):
+            with open(chemin_global, "r") as f:
+                liste = json.load(f)
+                for c in liste:
+                    if c.get("username") == username:
+                        compte_data = c
+                        break
+
+    if not compte_data:
+        print(horloge(), color(f"⛔ Aucun compte trouvé pour {username}", "1;31"))
+        return None
+
+    password = compte_data.get("password")
+    if not password:
+        print(horloge(), color(f"⛔ Mot de passe manquant pour {username}", "1;31"))
         return None
 
     cl = IGClient()
-
-    # Appliquer les paramètres de session sauvegardés
     try:
-        for key in ["settings", "authorization_data", "device_settings", "user_agent", "uuid", "uuids", "cookies"]:
-            if key in compte:
-                if key == "settings":
-                    cl.set_settings(compte[key])
-                else:
-                    setattr(cl, key, compte[key])
-    except Exception as e:
-        print(horloge(), color(f"⛔ Erreur lors de l’application des paramètres : {e}", "1;31"))
+        # Charger settings de la session
+        cl.load_settings(session_data)
 
-    # Test de validité session
-    try:
-        cl.get_timeline_feed()
-        print(horloge(), color(f" connecté : {username}", "1;32"))
+        cl.login(username, password)
+        print(horloge(), color(f"✅ Connecté à Instagram : {username}", "1;32"))
         return cl
     except Exception as e:
-        ajouter_a_blacklist(username, str(e))
-        print(horloge(), color(f"❌ Erreur Instagram : {e} (ajout à blacklist)", "1;31"))
+        ajouter_a_blacklist(username, f"Connexion échouée : {e}")
+        print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
         return None
 # ---------- Extraction & Action ----------
 
