@@ -173,30 +173,7 @@ def main():
     log_action("ajouté", username)
     time.sleep(3)
     return menu_retour_creer()
-
-
-
-
-
-
-
-
     
-
-    if not username or not password:
-        erreur("Champs obligatoires.")
-        time.sleep(4)
-        return creer_config()
-
-    
-        return creer_config()
-
-    with open(filepath, 'w') as f:
-        json.dump(profile, f, indent=4)
-
-    
-
-
 def menu_retour_creer():
     print("\n[1] Ajouter un autre compte ou [x] Retour au menu principal")
     choix = safe_input("Choix: ").strip().lower()
