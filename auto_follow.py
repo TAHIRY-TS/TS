@@ -156,18 +156,18 @@ def liker_post(client, lien_post):
     except Exception as e:
         print(f"{ts_time()}{R}[✗] Erreur like : {e}{W}")
         return False
+def corriger_headers(data):
+    if "headers" in data:
+        headers = data["headers"]
+        for k, v in headers.items():
+            if isinstance(v, list) and len(v) == 1:
+                headers[k] = v[0]  # convertir ['0'] => '0'
+    return data
 
 def login_avec_settings(data):
     username = data.get("username")
     password = data.get("password")
-
-    # Nettoyage des headers (convertir les listes en chaînes)
-    if "headers" in data:
-        data["headers"] = {
-            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
-            for k, v in data["headers"].items()
-        }
-
+    data = corriger_headers(data)  # Correction automatique ici
     client = Client()
     try:
         client.set_settings(data)
