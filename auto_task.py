@@ -42,12 +42,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 CONFIG_DIR = BASE_DIR
-
+SELECTED_USER_DIR = os.path.join(BASE_DIR, 'selected_user')
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
-SELECTED_USER_PATH = os.path.join(CONFIG_DIR, 'selected_user.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
 BLACKLIST_PATH = os.path.join(CONFIG_DIR, "blacklist.json")
 
@@ -219,7 +218,7 @@ def choisir_utilisateur_random_depuis_sessions_json():
         # Copier la session sélectionnée
         shutil.copy(chemin_source, chemin_destination)
 
-        print(horloge(), color(f"✅ Utilisateur sélectionné aléatoirement : {username}", "1;32"))
+        print(horloge(), color(f"🚹 User: {username}", "1;32"))
         return username
 
     except Exception as e:
@@ -377,7 +376,7 @@ async def handler(event):
             if not cl:
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram échouée", "1;31"))
                 return
-
+                
             id_cible = extraire_id_depuis_lien(cl, lien, action)
             if not id_cible:
                 print(horloge_prefix() + color("⛔ ID cible introuvable.", "1;31"))
