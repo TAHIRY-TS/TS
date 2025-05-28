@@ -107,21 +107,48 @@ def enregistrer_utilisateur(username, password):
     if not found:
         utilisateurs.append({username: password})
     enregistrer_utilisateurs(utilisateurs)
+    
+def getprop(prop):
+    try:
+        return subprocess.check_output(['getprop', prop]).decode().strip()
+    except subprocess.CalledProcessError:
+        return None
+
+def get_wm_info(field):
+    try:
+        output = subprocess.check_output(['wm', field]).decode().strip()
+        return output.split(": ")[1]
+    except Exception:
+        return None
+
+def get_app_info(package_name):
+    try:
+        output = subprocess.check_output(['dumpsys', 'package', package_name]).decode()
+        version_name = None
+        version_code = None
+        for line in output.splitlines():
+            if 'versionName=' in line:
+                version_name = line.split('=')[1].strip()
+            if 'versionCode=' in line:
+                version_code = line.split('=')[1].split(' ')[0].strip()
+        return version_name, version_code
+    except Exception:
+        return None, None
 
 # ----------- SESSION FORMAT STRICT -----------
 
-def generate_device_settings():
+def generate_device_settings(package_name='com.instagram.android'):
     return {
-        "app_version": "269.0.0.18.75",
-        "android_version": 29,
-        "android_release": "10",
-        "dpi": "480dpi",
-        "resolution": "1080x1920",
-        "manufacturer": "Xiaomi",
-        "device": "violet",
-        "model": "Redmi Note 7 Pro",
-        "cpu": "violet",
-        "version_code": "314665256"
+        "app_version": get_app_info(package_name)[0],
+        "android_version": getprop("ro.build.version.sdk"),
+        "android_release": getprop("ro.build.version.release"),
+        "dpi": get_wm_info("density"),
+        "resolution": get_wm_info("size"),
+        "manufacturer": getprop("ro.product.manufacturer"),
+        "device": getprop("ro.product.device"),
+        "model": getprop("ro.product.model"),
+        "cpu": getprop("ro.board.platform"),
+        "version_code": get_app_info(package_name)[1]
     }
 
 def generate_uuids():
