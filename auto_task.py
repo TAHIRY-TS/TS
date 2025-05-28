@@ -7,9 +7,7 @@ import sys
 import json
 import time
 import asyncio
-import shutil
 import random
-import threading
 from datetime import datetime
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -36,7 +34,7 @@ def loading(message, duration=3):
     print("\r" + " " * (len(message)+4), end="\r")
 
 def encadre_message(message, color_code="1;36"):
-    width = shutil.get_terminal_size().columns
+    width = os.get_terminal_size().columns
     border = color("═" * (width-2), color_code)
     print(color("╔" + border + "╗", color_code))
     for line in message.split('\n'):
@@ -52,10 +50,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 CONFIG_DIR = BASE_DIR
-SELECTED_USER_DIR = os.path.join(BASE_DIR, 'selected_user')
+
 os.makedirs(SESSION_DIR, exist_ok=True)
 os.makedirs(LOGS_DIR, exist_ok=True)
-os.makedirs(SELECTED_USER_DIR, exist_ok=True)
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
@@ -97,7 +94,7 @@ try:
         session_str = cfg['session']
 except:
     os.system('clear')
-    print(color("OBTENIR VOTRE API_ID ET API_HASH", "1;36").center(shutil.get_terminal_size().columns))
+    print(color("OBTENIR VOTRE API_ID ET API_HASH", "1;36").center(os.get_terminal_size().columns))
     print("Rendez-vous sur https://my.telegram.org et récupérez vos identifiants.")
     api_id = int(input("API ID: "))
     api_hash = input("API HASH: ")
@@ -130,9 +127,7 @@ def charger_client_depuis_fichier(session_file):
     cl = IGClient()
     with open(session_file, "r") as f:
         session_data = json.load(f)
-    # PATCH : auto-migration settings
     if "settings" not in session_data:
-        # Migration minimale
         session_data["settings"] = {
             "uuids": session_data.get("uuids"),
             "device_settings": session_data.get("device_settings"),
@@ -173,60 +168,28 @@ def restaurer_toutes_sessions():
 
 def choisir_utilisateur_random_depuis_utilisateur_json():
     utilisateurs = get_utilisateurs()
-    if not utilisateurs:
-        print(horloge(), color("⛔ utilisateur.json vide ou non trouvé !", "1;31"))
+    blacklist = [x['username'] for x in charger_blacklist()]
+    candidats = [item for item in utilisateurs if list(item.keys())[0] not in blacklist]
+    if not candidats:
+        print(horloge(), color("⛔ Tous les comptes sont blacklistés !", "1;31"))
         return None
-    userpass = random.choice(utilisateurs)
+    userpass = random.choice(candidats)
     username = list(userpass.keys())[0]
-    password = userpass[username]
-    # Copie la session racine (sessions/username.json) → selected_user/username.json
-    source = os.path.join(SESSION_DIR, f"{username}.json")
-    dest = os.path.join(SELECTED_USER_DIR, f"{username}.json")
-    if not os.path.exists(source):
-        print(horloge(), color(f"⛔ Session source introuvable pour {username}", "1;31"))
-        return None
-    # Nettoie selected_user/
-    for f in os.listdir(SELECTED_USER_DIR):
-        ff = os.path.join(SELECTED_USER_DIR, f)
-        if os.path.isfile(ff):
-            os.remove(ff)
-    shutil.copy(source, dest)
     print(horloge(), color(f"🚹 User sélectionné (random utilisateur.json): {username}", "1;32"))
     return username
 
-def connexion_instagram_depuis_selected_user():
-    selected_files = [f for f in os.listdir(SELECTED_USER_DIR) if f.endswith(".json")]
-    if not selected_files:
-        print(horloge(), color("⛔ Aucun fichier de session sélectionné dans 'selected_user/'", "1;31"))
-        return None, None
-    selected_filename = selected_files[0]
-    username = os.path.splitext(selected_filename)[0]
-    selected_file = os.path.join(SELECTED_USER_DIR, selected_filename)
+def connexion_instagram_depuis_sessions(username):
     password = get_password(username)
     if not password:
         print(horloge(), color(f"⛔ Mot de passe introuvable pour {username}", "1;31"))
         return None, None
-
-    def recharger_client():
-        return charger_client_depuis_fichier(selected_file)
-
-    cl = recharger_client()
-    try:
-        cl.get_timeline_feed()
-        print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
-        return cl, username
-    except Exception as e:
-        print(horloge(), color(f"[i] Session expirée, tentative de reconnexion pour {username}", "1;33"))
-        try:
-            cl.login(username, password)
-            cl.dump_settings(selected_file)
-            print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
-            cl = recharger_client()
-            return cl, username
-        except Exception as e:
-            print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
-            ajouter_a_blacklist(username, f"Connexion échouée : {e}")
-            return None, None
+    session_file = os.path.join(SESSION_DIR, f"{username}.json")
+    if not os.path.exists(session_file):
+        print(horloge(), color(f"⛔ Session source introuvable pour {username}", "1;31"))
+        return None, None
+    cl = charger_client_depuis_fichier(session_file)
+    # On NE teste plus la session ici ! (pas de get_timeline_feed, pas de login)
+    return cl, username
 
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
@@ -256,7 +219,7 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
 
-async def effectuer_action(cl, action, id_cible, comment_text=None):
+async def effectuer_action(cl, action, id_cible, comment_text=None, username=None):
     try:
         loading(f"Action en cours : {action}", 3)
         if action == "follow":
@@ -282,17 +245,12 @@ async def effectuer_action(cl, action, id_cible, comment_text=None):
             print(horloge_prefix() + color("[Action] Video view: attente 3s OK", "1;33"))
         return True
     except Exception as e:
-        if "login_required" in str(e).lower():
-            print(horloge_prefix() + color("[Session IG] login_required → tentative de restauration…", "1;33"))
-            cl2, _ = connexion_instagram_depuis_selected_user()
-            if cl2:
-                try:
-                    return await effectuer_action(cl2, action, id_cible, comment_text)
-                except Exception as e2:
-                    with open(ERROR_LOG, "a") as f:
-                        f.write(f"{horloge()} [Action Error 2] {e2}\n")
-                    print(horloge_prefix() + color(f"[Erreur action après restauration] {e2}", "1;31"))
-                    return False
+        err_str = str(e).lower()
+        if "login required" in err_str or "challenge" in err_str or "checkpoint" in err_str:
+            print(horloge_prefix() + color("[IG] Login/challenge/checkpoint requis. Compte blacklisté.", "1;31"))
+            if username:
+                ajouter_a_blacklist(username, f"Login/Challenge/Checkpoint IG: {e}")
+            return False
         with open(ERROR_LOG, "a") as f:
             f.write(f"{horloge()} [Action Error] {e}\n")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
@@ -301,48 +259,6 @@ async def effectuer_action(cl, action, id_cible, comment_text=None):
 def sauvegarder_task(lien, action, username):
     with open(TASK_DATA_PATH, "a") as f:
         f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
-
-# ----------- TRAITEMENT AU DEMARRAGE -----------
-
-async def traiter_dernier_message_si_besoin():
-    selected_files = [f for f in os.listdir(SELECTED_USER_DIR) if f.endswith(".json")]
-    if not selected_files:
-        print(horloge(), color("Aucun utilisateur sélectionné pour traitement initial.", "1;33"))
-        return
-    username = os.path.splitext(selected_files[0])[0]
-    cl, _ = connexion_instagram_depuis_selected_user()
-    if not cl:
-        print(horloge(), color("Impossible de restaurer la session Instagram, skip traitement initial.", "1;31"))
-        return
-
-    async for msg in client.iter_messages("SmmKingdomTasksBot", limit=1):
-        dernier_msg = msg.text.lower()
-        print(horloge_prefix() + color(f"[Dernier message bot] : {dernier_msg}", "1;35"))
-        lien, action = extraire_infos(dernier_msg)
-        if lien and action:
-            print(horloge_prefix() + color("[Traitement auto] Dernière tâche trouvée, exécution...", "1;36"))
-            id_cible = extraire_id_depuis_lien(cl, lien, action)
-            if id_cible:
-                sauvegarder_task(lien, action, username)
-                notifier_termux(f"{action.title()} | {lien}")
-                print(horloge_prefix() + color(f"[🛂] Action : {action}", "1;36"))
-                print(horloge_prefix() + color(f"[🌍] Lien : {lien}", "1;33"))
-                print(horloge_prefix() + color(f"[🧾] ID Cible : {id_cible}", "1;37"))
-                print(horloge_prefix() + color(f"[👤] Utilisateur : {username}", "1;35"))
-                if action == "comment":
-                    print(horloge_prefix() + color("[📝] Attente du texte du commentaire...", "1;33"))
-                    return
-                result = await effectuer_action(cl, action, id_cible)
-                if result:
-                    await client.send_message("SmmKingdomTasksBot", "✅Completed")
-                else:
-                    await client.send_message("SmmKingdomTasksBot", "❌Error")
-                await asyncio.sleep(random.randint(5, 10))
-                await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
-            else:
-                print(horloge_prefix() + color("[Traitement auto] ID cible introuvable.", "1;31"))
-            return
-        print(horloge_prefix() + color("[Traitement auto] Aucune tâche à exécuter au démarrage.", "1;33"))
 
 # ----------- MAIN LOOP -----------
 
@@ -360,7 +276,8 @@ async def handler(event):
             cl = pending_comment["cl"]
             action = pending_comment["action"]
             media_pk = pending_comment["media_pk"]
-            result = await effectuer_action(cl, action, media_pk, comment_text=comment_text)
+            username = pending_comment["username"]
+            result = await effectuer_action(cl, action, media_pk, comment_text=comment_text, username=username)
             if result:
                 print(horloge_prefix() + color("[✅] Commentaire posté avec succès", "1;32"))
                 await event.respond("✅Completed")
@@ -403,7 +320,11 @@ async def handler(event):
             if not lien or not action:
                 print(horloge_prefix() + color("❗ Tâche invalide, informations manquantes.", "1;33"))
                 return
-            cl, username = connexion_instagram_depuis_selected_user()
+            username = current_user
+            if not username:
+                print(horloge_prefix() + color("[⚠️] Aucun utilisateur sélectionné", "1;31"))
+                return
+            cl, _ = connexion_instagram_depuis_sessions(username)
             if not cl or not username:
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram échouée", "1;31"))
                 return
@@ -418,10 +339,10 @@ async def handler(event):
             print(horloge_prefix() + color(f"[🧾] ID Cible : {id_cible}", "1;37"))
             print(horloge_prefix() + color(f"[👤] Utilisateur : {username}", "1;35"))
             if action == "comment":
-                pending_comment = {"media_pk": id_cible, "cl": cl, "action": action}
+                pending_comment = {"media_pk": id_cible, "cl": cl, "action": action, "username": username}
                 print(horloge_prefix() + color("[📝] Veuillez attendre le message contenant le texte du commentaire...", "1;33"))
                 return
-            result = await effectuer_action(cl, action, id_cible)
+            result = await effectuer_action(cl, action, id_cible, username=username)
             if result:
                 print(horloge_prefix() + color("[✅] Tâche réussie", "1;32"))
                 await event.respond("✅Completed")
@@ -449,14 +370,13 @@ async def handler(event):
 
 if __name__ == "__main__":
     os.system('clear')
-    print(color("🤖 Bienvenue sur TS Thermux 🤖", "1;36").center(shutil.get_terminal_size().columns))
+    print(color("🤖 Bienvenue sur TS Thermux 🤖", "1;36").center(os.get_terminal_size().columns))
     loading(horloge() + "🔄 Préparation des données...", 3)
     try:
         print(horloge() + color("🚀 Lancement du bot...", "1;36"))
-        restaurer_toutes_sessions()
+        restaurer_toutes_sessions()  # Validation/restauration de toutes les sessions au démarrage
         async def main():
             await client.start()
-            await traiter_dernier_message_si_besoin()
             await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
             await client.run_until_disconnected()
         asyncio.run(main())
