@@ -108,35 +108,21 @@ def enregistrer_utilisateur(username, password):
         utilisateurs.append({username: password})
     enregistrer_utilisateurs(utilisateurs)
 
+# ----------- SESSION FORMAT STRICT -----------
+
 def generate_device_settings():
-    try:
-        def getprop(x):
-            return subprocess.check_output(['getprop', x], encoding='utf-8').strip()
-        return {
-            "app_version": "269.0.0.18.75",
-            "android_version": int(getprop("ro.build.version.sdk") or 33),
-            "android_release": getprop("ro.build.version.release") or "13",
-            "dpi": "480dpi",
-            "resolution": "1080x1920",
-            "manufacturer": getprop("ro.product.manufacturer") or "samsung",
-            "device": getprop("ro.product.device") or "beyond1",
-            "model": getprop("ro.product.model") or "SM-G973F",
-            "cpu": getprop("ro.product.board") or "exynos9820",
-            "version_code": "314665256"
-        }
-    except Exception:
-        return {
-            "app_version": "269.0.0.18.75",
-            "android_version": 33,
-            "android_release": "13",
-            "dpi": "480dpi",
-            "resolution": "1080x1920",
-            "manufacturer": "samsung",
-            "device": "beyond1",
-            "model": "SM-G973F",
-            "cpu": "exynos9820",
-            "version_code": "314665256"
-        }
+    return {
+        "app_version": "269.0.0.18.75",
+        "android_version": 29,
+        "android_release": "10",
+        "dpi": "480dpi",
+        "resolution": "1080x1920",
+        "manufacturer": "Xiaomi",
+        "device": "violet",
+        "model": "Redmi Note 7 Pro",
+        "cpu": "violet",
+        "version_code": "314665256"
+    }
 
 def generate_uuids():
     return {
@@ -149,49 +135,42 @@ def generate_uuids():
         "tray_session_id": str(uuid.uuid4())
     }
 
-def generate_user_agent(settings):
+def generate_user_agent(device_settings):
     return (
-        f"Instagram {settings['app_version']} Android "
-        f"({settings['android_version']}/{settings['android_release']}; "
-        f"{settings['dpi']}; {settings['resolution']}; {settings['manufacturer']}; "
-        f"{settings['model']}; {settings['device']}; {settings['cpu']}; "
-        f"en_US; {settings['version_code']})"
+        f"Instagram {device_settings['app_version']} Android "
+        f"({device_settings['android_version']}/{device_settings['android_release']}; "
+        f"{device_settings['dpi']}; {device_settings['resolution']}; "
+        f"{device_settings['manufacturer']}; {device_settings['model']}; "
+        f"{device_settings['device']}; {device_settings['cpu']}; en_US; {device_settings['version_code']})"
     )
 
-def generate_settings(device_settings, uuids, user_agent, username):
-    return {
-        "uuids": uuids,
-        "device_settings": device_settings,
-        "user_agent": user_agent,
-        "country": "US",
-        "country_code": 1,
-        "locale": "en_US",
-        "timezone_offset": -14400,
-        "username": username,
-        "last_login": int(time.time())
-    }
+def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=None, base_dir=CONFIG_DIR, force=False):
+    filepath = os.path.join(base_dir, f"{username}.json")
+    session_dir = os.path.join(base_dir, 'sessions')
+    os.makedirs(session_dir, exist_ok=True)
 
-def generate_data(username, password):
+    # Si pas de sessionid/ds_user_id, génère des FAKE (ne sera pas utilisable sur Instagram !)
+    if not sessionid:
+        sessionid = f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A24%3AAY{uuid.uuid4().hex[:24]}"
+    if not ds_user_id:
+        ds_user_id = str(uuid.uuid4().int)[:11]
+
     device_settings = generate_device_settings()
     uuids = generate_uuids()
     user_agent = generate_user_agent(device_settings)
-    timestamp = int(time.time())
-    settings = generate_settings(device_settings, uuids, user_agent, username)
-    return {
-        "uid": str(uuid.uuid4()),
-        "username": username,
-        "password": password,
-        "settings": settings,
+    now = time.time()
+
+    data = {
         "uuids": uuids,
         "mid": uuid.uuid4().hex[:16],
         "ig_u_rur": None,
         "ig_www_claim": None,
         "authorization_data": {
-            "ds_user_id": str(uuid.uuid4().int)[:11],
-            "sessionid": f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A8%3AAY{uuid.uuid4().hex[:24]}"
+            "ds_user_id": ds_user_id,
+            "sessionid": sessionid
         },
         "cookies": {},
-        "last_login": timestamp,
+        "last_login": now,
         "device_settings": device_settings,
         "user_agent": user_agent,
         "country": "US",
@@ -200,18 +179,11 @@ def generate_data(username, password):
         "timezone_offset": -14400
     }
 
-def creer_fichier_utilisateur(username, password, force=False):
-    filepath = os.path.join(CONFIG_DIR, f"{username}.json")
-    if os.path.exists(filepath) and not force:
-        erreur(f"Le fichier source {username}.json existe déjà.")
-        return False
-    data = generate_data(username, password)
     with open(filepath, "w") as f:
         json.dump(data, f, indent=4)
     os.chmod(filepath, 0o600)
-    # Toujours copier dans sessions/
-    shutil.copy(filepath, os.path.join(SESSION_DIR, f"{username}.json"))
-    os.chmod(os.path.join(SESSION_DIR, f"{username}.json"), 0o600)
+    shutil.copy(filepath, os.path.join(session_dir, f"{username}.json"))
+    os.chmod(os.path.join(session_dir, f"{username}.json"), 0o600)
     return True
 
 def auto_repair_all_sources():
@@ -245,7 +217,15 @@ def main():
         time.sleep(2)
         return
 
-    creer_fichier_utilisateur(username, password, force=True)
+    # Demander si l'utilisateur veut entrer un vrai sessionid/ds_user_id
+    print(color("Si tu veux utiliser une vraie session Instagram, entre le sessionid et le ds_user_id (laisser vide pour auto).", "1;34"))
+    sessionid = safe_input("Sessionid (optionnel): ").strip()
+    ds_user_id = safe_input("ds_user_id (optionnel): ").strip()
+
+    sessionid = sessionid if sessionid else None
+    ds_user_id = ds_user_id if ds_user_id else None
+
+    creer_fichier_utilisateur(username, password, sessionid=sessionid, ds_user_id=ds_user_id, force=True)
     enregistrer_utilisateur(username, password)
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
