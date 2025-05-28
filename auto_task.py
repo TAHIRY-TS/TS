@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import re
 import sys
@@ -14,11 +17,20 @@ from telethon.sessions import StringSession
 from telethon import events
 from instagrapi import Client as IGClient
 
-print("\033[?25l", end="", flush=True)  # Masquer le curseur
+# ----------- AMBIANCE & UTILS -----------
 
-# ---------- Utilitaires ----------
 def color(text, code):
     return f"\033[{code}m{text}\033[0m"
+
+def rainbow(text):
+    colors = ['31', '32', '33', '34', '35', '36']
+    out = ''
+    for i, c in enumerate(text):
+        out += f"\033[1;{colors[i % len(colors)]}m{c}\033[0m"
+    return out
+
+def separateur():
+    print(color("=" * shutil.get_terminal_size().columns, "1;36"))
 
 def horloge():
     return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;34")
@@ -26,16 +38,19 @@ def horloge():
 def horloge_prefix():
     return color(f"[TS {datetime.now().strftime('%H:%M:%S')}]", "1;34") + " "
 
-def titre_section(titre):
-    largeur = 50
-    terminal_width = shutil.get_terminal_size().columns
-    padding = max((terminal_width - largeur) // 2, 0)
-    spaces = ' ' * padding
-    print(f"\n{spaces}\033[1;35m╔{'═' * largeur}╗\033[0m")
-    print(f"{spaces}\033[1;35m║ {titre.center(largeur - 2)} ║\033[0m")
-    print(f"{spaces}\033[1;35m╚{'═' * largeur}╝\033[0m\n")
+def loading(message, duration=3):
+    chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    for i in range(duration * 4):
+        sys.stdout.write(f"\r{color(message, '1;36')} {color(chars[i % len(chars)], '1;35')}")
+        sys.stdout.flush()
+        time.sleep(0.25)
+    print("\r" + " " * (len(message)+4), end="\r")
 
-# ---------- Répertoires ----------
+def clignote(text):
+    return f"\033[5m{text}\033[0m"
+
+# ----------- INIT -----------
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
@@ -50,7 +65,8 @@ ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
 BLACKLIST_PATH = os.path.join(CONFIG_DIR, "blacklist.json")
 UTILISATEUR_PATH = os.path.join(CONFIG_DIR, "utilisateur.json")
 
-# ---------- Blacklist ----------
+# ----------- BLACKLIST -----------
+
 def charger_blacklist():
     if not os.path.exists(BLACKLIST_PATH):
         return []
@@ -67,19 +83,25 @@ def ajouter_a_blacklist(username, raison="Erreur session"):
 def afficher_blacklist():
     liste = charger_blacklist()
     if not liste:
-        print(horloge_prefix() + color("Aucun compte en erreur", "1;32"))
+        print(horloge_prefix() + color("🎉 Aucun compte en erreur", "1;32"))
     else:
-        print(horloge_prefix() + color("Comptes en erreur :", "1;31"))
-        print(tabulate([[item["username"], item["statut"]] for item in liste], headers=["Username", "Statut"]))
+        print(horloge_prefix() + color("🚨 Comptes en erreur :", "1;31"))
+        table = tabulate(
+            [[color(item["username"], "1;91"), color(item["statut"], "1;93")] for item in liste],
+            headers=[color("Username", "1;35"), color("Statut", "1;35")],
+            tablefmt="fancy_grid")
+        print(table)
 
-# ---------- Connexion Telegram ----------
+# ----------- CONNEXION TELEGRAM -----------
+
 def se_connecter(api_id, api_hash, phone):
+    loading("Connexion à Telegram", 4)
     with TelegramClient(StringSession(), api_id, api_hash) as client:
         client.start(phone)
         session = client.session.save()
         with open(CONFIG_PATH, "w") as f:
             json.dump({"api_id": api_id, "api_hash": api_hash, "session": session}, f)
-        print(f"{horloge()} Session Telegram sauvegardée")
+        print(f"{horloge()} {color('Session Telegram sauvegardée', '1;32')}")
 
 try:
     with open(CONFIG_PATH) as f:
@@ -88,7 +110,10 @@ try:
         api_hash = cfg['api_hash']
         session_str = cfg['session']
 except:
-    titre_section("OBTENIR VOTRE API_ID ET API_HASH")
+    afficher_logo()
+    titre = rainbow("OBTENIR VOTRE API_ID ET API_HASH")
+    print(titre.center(shutil.get_terminal_size().columns))
+    separateur()
     gris_sombre = "\033[1;30m"
     jaune = "\033[1;33m"
     reset = "\033[0m"
@@ -119,7 +144,8 @@ except:
 
 client = TelegramClient(StringSession(session_str), api_id, api_hash)
 
-# ---------- Préparation des sessions Instagram depuis JSON ----------
+# ----------- INSTAGRAM SESSION -----------
+
 def prepare_sessions_depuis_json():
     comptes_json = [f for f in os.listdir(BASE_DIR)
                     if f.endswith(".json")
@@ -159,7 +185,7 @@ def prepare_sessions_depuis_json():
             if "uuids" in params:
                 cl.uuids = params["uuids"]
 
-            # Connexion unique pour créer la session (évite le relogin ensuite)
+            loading(f"Connexion Instagram : {username}", 3)
             cl.login(username, password)
             cl.dump_settings(session_path)
 
@@ -200,7 +226,6 @@ def choisir_utilisateur_random_depuis_sessions_json():
         print(horloge(), color(f"❌ Erreur lors de la sélection : {e}", "1;31"))
         return None
 
-# -------- Extraction mot de passe utilisateur.json --------
 def get_password(username):
     if not os.path.exists(UTILISATEUR_PATH):
         return None
@@ -211,7 +236,6 @@ def get_password(username):
                 return item[username]
     return None
 
-# ---------- Connexion Instagram (anti-challenge maximum) ----------
 def connexion_instagram(username):
     selected_file = os.path.join(SELECTED_USER_DIR, f"{username}.json")
     if not os.path.exists(selected_file):
@@ -239,6 +263,7 @@ def connexion_instagram(username):
         if "uuids" in session_data:
             cl.uuids = session_data["uuids"]
         try:
+            loading(f"Vérification session IG : {username}", 2)
             cl.get_timeline_feed()
             print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
             return cl
@@ -250,9 +275,9 @@ def connexion_instagram(username):
             return cl
     except Exception as e:
         ajouter_a_blacklist(username, f"Connexion échouée : {e}")
-        print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
+        print(horloge(), clignote(color(f"❌ Connexion échouée pour {username} : {e}", "1;31")))
         return None
-# ---------- Extraction & Action ----------
+
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
     action_match = re.search(r'Action\s*:\s*(Follow|Like|Story View|Comment|Video View)', msg, re.IGNORECASE)
@@ -281,9 +306,9 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
 
-# ---------- Gestion des actions Instagram ----------
 async def effectuer_action(cl, action, id_cible, comment_text=None):
     try:
+        loading(f"Action en cours : {action}", 3)
         if action == "follow":
             cl.user_follow(id_cible)
             print(horloge_prefix() + color("[Action] Follow effectué", "1;32"))
@@ -315,7 +340,8 @@ def log_erreur(message):
     with open(ERROR_LOG, "a") as f:
         f.write(f"{horloge()} {message}\n")
 
-# ---------- Main Async Loop ----------
+# ----------- MAIN LOOP -----------
+
 current_user = None  # Le nom d'utilisateur Instagram utilisé
 pending_comment = None  # Structure: {"media_pk":..., "cl":..., "action":...}
 
@@ -433,8 +459,11 @@ async def handler(event):
         afficher_blacklist()
         await asyncio.sleep(5)
 
-# ---------- Main Loop ----------
 if __name__ == "__main__":
+    os.system('clear')
+    afficher_logo()
+    print(rainbow("🤖 Bienvenue sur TS Thermux 🤖").center(shutil.get_terminal_size().columns))
+    separateur()
     print(horloge() + color("🔄 Préparation des données...", "1;33"))
     try:
         prepare_sessions_depuis_json()
