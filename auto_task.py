@@ -131,7 +131,29 @@ def charger_client_depuis_fichier(session_file):
     cl.set_settings(settings)
     return cl
 
-def connexion_instagram_depuis_selected_user(force_restore=False):
+def restaurer_toutes_sessions():
+    # À lancer au démarrage pour garder toutes les sessions Instagram valides
+    for filename in os.listdir(SESSION_DIR):
+        if filename.endswith(".json"):
+            username = os.path.splitext(filename)[0]
+            session_file = os.path.join(SESSION_DIR, filename)
+            password = get_password(username)
+            if not password:
+                continue
+            cl = charger_client_depuis_fichier(session_file)
+            try:
+                cl.get_timeline_feed()
+            except Exception as e:
+                print(horloge(), color(f"[i] Restore session pour {username}…", "1;33"))
+                try:
+                    cl.login(username, password)
+                    cl.dump_settings(session_file)
+                    print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
+                except Exception as e:
+                    print(horloge(), color(f"❌ Echec restauration {username}: {e}", "1;31"))
+                    ajouter_a_blacklist(username, f"Restauration démarrage: {e}")
+
+def connexion_instagram_depuis_selected_user():
     selected_files = [f for f in os.listdir(SELECTED_USER_DIR) if f.endswith(".json")]
     if not selected_files:
         print(horloge(), color("⛔ Aucun fichier de session sélectionné dans 'selected_user/'", "1;31"))
@@ -145,25 +167,7 @@ def connexion_instagram_depuis_selected_user(force_restore=False):
         return None, None
 
     def recharger_client():
-        cl = IGClient()
-        with open(selected_file, "r") as f:
-            session_data = json.load(f)
-        settings = session_data["settings"] if "settings" in session_data else session_data
-        cl.set_settings(settings)
-        return cl
-
-    if force_restore:
-        cl = IGClient()
-        try:
-            cl.login(username, password)
-            cl.dump_settings(selected_file)
-            print(horloge(), color(f"✅ Session restaurée pour : {username} (force)", "1;32"))
-            cl = recharger_client()
-            return cl, username
-        except Exception as e:
-            print(horloge(), color(f"❌ Echec restauration {username}: {e}", "1;31"))
-            ajouter_a_blacklist(username, f"Restauration échec: {e}")
-            return None, None
+        return charger_client_depuis_fichier(selected_file)
 
     cl = recharger_client()
     try:
@@ -172,7 +176,55 @@ def connexion_instagram_depuis_selected_user(force_restore=False):
         return cl, username
     except Exception as e:
         print(horloge(), color(f"[i] Session expirée, tentative de reconnexion pour {username}", "1;33"))
-        return connexion_instagram_depuis_selected_user(force_restore=True)
+        try:
+            cl.login(username, password)
+            cl.dump_settings(selected_file)
+            print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
+            cl = recharger_client()
+            return cl, username
+        except Exception as e:
+            err_str = str(e).lower()
+            if "challenge" in err_str:
+                print(horloge(), color(f"🔐 Challenge requis pour {username} !", "1;33"))
+                try:
+                    challenge_url = getattr(cl, "last_json", {}).get('challenge', {}).get('url', "")
+                    print(horloge(), color(f"Entrez le code reçu par mail/SMS pour {username} (3 minutes):", "1;36"))
+                    print(horloge(), color(f"Challenge URL: {challenge_url}", "1;35"))
+                    code = [None]
+                    def input_with_timeout(prompt, timeout):
+                        def get_input():
+                            code[0] = input(prompt)
+                        t = threading.Thread(target=get_input)
+                        t.start()
+                        t.join(timeout)
+                    input_with_timeout("Code Instagram : ", 180)
+                    if not code[0]:
+                        print(horloge(), color("⏰ Temps écoulé, on passe au compte suivant.", "1;31"))
+                        ajouter_a_blacklist(username, "No Challenge Code (timeout)")
+                        return None, None
+                    try:
+                        cl.challenge_resolve(code[0])
+                        cl.dump_settings(selected_file)
+                        print(horloge(), color(f"✅ Challenge réussi pour : {username}", "1;32"))
+                        cl = recharger_client()
+                        return cl, username
+                    except Exception as e2:
+                        print(horloge(), color(f"❌ Echec du challenge: {e2}", "1;31"))
+                        ajouter_a_blacklist(username, "Failed Challenge")
+                        return None, None
+                except Exception as e3:
+                    print(horloge(), color(f"❌ Echec gestion challenge: {e3}", "1;31"))
+                    ajouter_a_blacklist(username, "Challenge Error")
+                    return None, None
+            elif "checkpoint" in err_str:
+                print(horloge(), color(f"🚧 Checkpoint pour {username} : Etape manuelle requise", "1;33"))
+                ajouter_a_blacklist(username, "Checkpoint - Manual action needed")
+                notifier_termux(f"Etape supplémentaire requise (Checkpoint) pour {username} !")
+                return None, None
+            else:
+                print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
+                ajouter_a_blacklist(username, f"Connexion échouée : {e}")
+                return None, None
 
 def choisir_utilisateur_random_depuis_sessions_json():
     os.makedirs(SELECTED_USER_DIR, exist_ok=True)
@@ -251,16 +303,21 @@ async def effectuer_action(cl, action, id_cible, comment_text=None):
         # Si session expirée, tenter une restauration automatique
         if "login_required" in str(e).lower():
             print(horloge_prefix() + color("[Session IG] login_required → tentative de restauration…", "1;33"))
-            cl2, _ = connexion_instagram_depuis_selected_user(force_restore=True)
-            if cl2:
-                try:
-                    # Retry action une fois
-                    return await effectuer_action(cl2, action, id_cible, comment_text)
-                except Exception as e2:
-                    with open(ERROR_LOG, "a") as f:
-                        f.write(f"{horloge()} [Action Error 2] {e2}\n")
-                    print(horloge_prefix() + color(f"[Erreur action après restauration] {e2}", "1;31"))
-                    return False
+            username = None
+            for f in os.listdir(SELECTED_USER_DIR):
+                if f.endswith('.json'):
+                    username = os.path.splitext(f)[0]
+            if username:
+                cl2, _ = connexion_instagram_depuis_selected_user()
+                if cl2:
+                    try:
+                        # Retry action une fois
+                        return await effectuer_action(cl2, action, id_cible, comment_text)
+                    except Exception as e2:
+                        with open(ERROR_LOG, "a") as f:
+                            f.write(f"{horloge()} [Action Error 2] {e2}\n")
+                        print(horloge_prefix() + color(f"[Erreur action après restauration] {e2}", "1;31"))
+                        return False
         with open(ERROR_LOG, "a") as f:
             f.write(f"{horloge()} [Action Error] {e}\n")
         print(horloge_prefix() + color(f"[Erreur action] {e}", "1;31"))
@@ -421,6 +478,7 @@ if __name__ == "__main__":
     loading(horloge() + "🔄 Préparation des données...", 3)
     try:
         print(horloge() + color("🚀 Lancement du bot...", "1;36"))
+        restaurer_toutes_sessions()  # Toujours restaurer les sessions au démarrage !
         async def main():
             await client.start()
             await traiter_dernier_message_si_besoin()
