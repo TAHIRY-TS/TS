@@ -18,7 +18,22 @@ from telethon import events
 from instagrapi import Client as IGClient
 
 # ----------- AMBIANCE & UTILS -----------
-def afficher_logo()
+
+def afficher_logo():
+    logo = [
+        "████████╗███████╗",
+        "╚══██╔══╝██╔════╝",
+        "   ██║   ███████╗",
+        "   ██║        ██║",
+        "   ██║   ███████║",
+        "   ╚═╝   ╚══════╝"
+    ]
+    colors = ['31', '33', '32', '36', '34', '35']  # Rouge, Jaune, Vert, Cyan, Bleu, Magenta
+    width = shutil.get_terminal_size().columns
+    for i, line in enumerate(logo):
+        color = colors[i % len(colors)]
+        padding = max((width - len(line)) // 2, 0)
+        print(" " * padding + f"\033[1;{color}m{line}\033[0m")
 
 def color(text, code):
     return f"\033[{code}m{text}\033[0m"
