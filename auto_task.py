@@ -48,7 +48,7 @@ def notifier_termux(msg):
 # ----------- PATHS -----------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
+SESSION_DIR = ~/TS/sessions
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 CONFIG_DIR = BASE_DIR
 SELECTED_USER_DIR = os.path.join(BASE_DIR, 'selected_user')
@@ -159,7 +159,7 @@ def connexion_instagram_depuis_selected_user():
 
 def choisir_utilisateur_random_depuis_sessions_json():
     os.makedirs(SELECTED_USER_DIR, exist_ok=True)
-    sessions_disponibles = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json")]
+    sessions_disponibles = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json" and f not in ['config.json', 'selected_user.json', "utilisateur.json"])]
     if not sessions_disponibles:
         print(horloge(), color("⛔ Aucun fichier de session trouvé dans le dossier 'sessions/'", "1;31"))
         return None
