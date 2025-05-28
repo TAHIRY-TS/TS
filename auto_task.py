@@ -227,9 +227,19 @@ def connexion_instagram(username):
     try:
         with open(selected_file, "r") as f:
             session_data = json.load(f)
-        cl.load_settings(session_data)
+        cl.load_settings(session_data["settings"])
+        if "authorization_data" in session_data:
+            cl.authorization_data = session_data["authorization_data"]
+        if "device_settings" in session_data:
+            cl.device_settings = session_data["device_settings"]
+        if "user_agent" in session_data:
+            cl.user_agent = session_data["user_agent"]
+        if "uuid" in session_data:
+            cl.uuid = session_data["uuid"]
+        if "uuids" in session_data:
+            cl.uuids = session_data["uuids"]
         try:
-            cl.get_timeline_feed()  # Vérifie si la session est bonne
+            cl.get_timeline_feed()
             print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
             return cl
         except Exception:
@@ -242,7 +252,6 @@ def connexion_instagram(username):
         ajouter_a_blacklist(username, f"Connexion échouée : {e}")
         print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
         return None
-
 # ---------- Extraction & Action ----------
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
