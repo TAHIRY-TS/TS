@@ -9,6 +9,7 @@ import time
 import asyncio
 import shutil
 import random
+import threading
 from datetime import datetime
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -48,7 +49,7 @@ def notifier_termux(msg):
 # ----------- PATHS -----------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SESSION_DIR = ~/TS/sessions
+SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 CONFIG_DIR = BASE_DIR
 SELECTED_USER_DIR = os.path.join(BASE_DIR, 'selected_user')
@@ -58,7 +59,7 @@ os.makedirs(SELECTED_USER_DIR, exist_ok=True)
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
-BLACKLIST_PATH = os.path.join(LOGS_DIR, "blacklist.json")
+BLACKLIST_PATH = os.path.join(CONFIG_DIR, "blacklist.json")
 UTILISATEUR_PATH = os.path.join(CONFIG_DIR, "utilisateur.json")
 TASK_DATA_PATH = os.path.join(CONFIG_DIR, "task_data.txt")
 
@@ -134,7 +135,6 @@ def connexion_instagram_depuis_selected_user():
     if not password:
         print(horloge(), color(f"⛔ Mot de passe introuvable pour {username}", "1;31"))
         return None, None
-
     cl = IGClient()
     try:
         with open(selected_file, "r") as f:
@@ -146,11 +146,55 @@ def connexion_instagram_depuis_selected_user():
         try:
             cl.get_timeline_feed()
             print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
-        except Exception:
+        except Exception as e:
             print(horloge(), color(f"[i] Session expirée, tentative de reconnexion pour {username}", "1;33"))
-            cl.login(username, password)
-            cl.dump_settings(selected_file)
-            print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
+            try:
+                cl.login(username, password)
+                cl.dump_settings(selected_file)
+                print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
+            except Exception as e:
+                err_str = str(e).lower()
+                # --- Challenge (code par mail/SMS) ---
+                if "challenge" in err_str:
+                    print(horloge(), color(f"🔐 Challenge requis pour {username} !", "1;33"))
+                    try:
+                        challenge_url = cl.last_json.get('challenge', {}).get('url', "")
+                        print(horloge(), color(f"Entrez le code reçu par mail/SMS pour {username} (3 minutes):", "1;36"))
+                        print(horloge(), color(f"Challenge URL: {challenge_url}", "1;35"))
+                        code = [None]
+                        def input_with_timeout(prompt, timeout):
+                            def get_input():
+                                code[0] = input(prompt)
+                            t = threading.Thread(target=get_input)
+                            t.start()
+                            t.join(timeout)
+                        input_with_timeout("Code Instagram : ", 180)
+                        if not code[0]:
+                            print(horloge(), color("⏰ Temps écoulé, on passe au compte suivant.", "1;31"))
+                            ajouter_a_blacklist(username, "No Challenge Code (timeout)")
+                            return None, None
+                        try:
+                            cl.challenge_resolve(code[0])
+                            cl.dump_settings(selected_file)
+                            print(horloge(), color(f"✅ Challenge réussi pour : {username}", "1;32"))
+                            return cl, username
+                        except Exception as e2:
+                            print(horloge(), color(f"❌ Echec du challenge: {e2}", "1;31"))
+                            ajouter_a_blacklist(username, "Failed Challenge")
+                            return None, None
+                    except Exception as e3:
+                        print(horloge(), color(f"❌ Echec gestion challenge: {e3}", "1;31"))
+                        ajouter_a_blacklist(username, "Challenge Error")
+                        return None, None
+                elif "checkpoint" in err_str:
+                    print(horloge(), color(f"🚧 Checkpoint pour {username} : Etape manuelle requise", "1;33"))
+                    ajouter_a_blacklist(username, "Checkpoint - Manual action needed")
+                    notifier_termux(f"Etape supplémentaire requise (Checkpoint) pour {username} !")
+                    return None, None
+                else:
+                    print(horloge(), color(f"❌ Connexion échouée pour {username} : {e}", "1;31"))
+                    ajouter_a_blacklist(username, f"Connexion échouée : {e}")
+                    return None, None
         return cl, username
     except Exception as e:
         ajouter_a_blacklist(username, f"Connexion échouée : {e}")
@@ -159,7 +203,7 @@ def connexion_instagram_depuis_selected_user():
 
 def choisir_utilisateur_random_depuis_sessions_json():
     os.makedirs(SELECTED_USER_DIR, exist_ok=True)
-    sessions_disponibles = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json" and f not in ['config.json', 'selected_user.json', "utilisateur.json"])]
+    sessions_disponibles = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json")]
     if not sessions_disponibles:
         print(horloge(), color("⛔ Aucun fichier de session trouvé dans le dossier 'sessions/'", "1;31"))
         return None
