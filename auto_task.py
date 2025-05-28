@@ -139,10 +139,12 @@ def connexion_instagram_depuis_selected_user():
     try:
         with open(selected_file, "r") as f:
             session_data = json.load(f)
-        if "settings" in session_data:
-            cl.load_settings(session_data["settings"])
+        # Correction : toujours obtenir le bloc de settings, peu importe la structure
+        if isinstance(session_data, dict) and "settings" in session_data:
+            settings = session_data["settings"]
         else:
-            cl.set_settings(session_data)
+            settings = session_data  # déjà un bloc de settings
+        cl.set_settings(settings)
         try:
             cl.get_timeline_feed()
             print(horloge(), color(f"✅ Session déjà active pour : {username}", "1;32"))
@@ -154,11 +156,10 @@ def connexion_instagram_depuis_selected_user():
                 print(horloge(), color(f"✅ Session restaurée pour : {username}", "1;32"))
             except Exception as e:
                 err_str = str(e).lower()
-                # --- Challenge (code par mail/SMS) ---
                 if "challenge" in err_str:
                     print(horloge(), color(f"🔐 Challenge requis pour {username} !", "1;33"))
                     try:
-                        challenge_url = cl.last_json.get('challenge', {}).get('url', "")
+                        challenge_url = getattr(cl, "last_json", {}).get('challenge', {}).get('url', "")
                         print(horloge(), color(f"Entrez le code reçu par mail/SMS pour {username} (3 minutes):", "1;36"))
                         print(horloge(), color(f"Challenge URL: {challenge_url}", "1;35"))
                         code = [None]
@@ -268,7 +269,7 @@ async def effectuer_action(cl, action, id_cible, comment_text=None):
             await asyncio.sleep(3)
             print(horloge_prefix() + color("[Action] Story view: attente 3s OK", "1;33"))
         elif action == "video view":
-            cl.media_like(id_cible)  # Simule un view
+            cl.media_like(id_cible)
             await asyncio.sleep(3)
             print(horloge_prefix() + color("[Action] Video view: attente 3s OK", "1;33"))
         return True
