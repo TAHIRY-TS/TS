@@ -65,6 +65,14 @@ def loading(message, duration=3):
 def clignote(text):
     return f"\033[5m{text}\033[0m"
 
+def encadre_message(message, color_code="1;36"):
+    width = shutil.get_terminal_size().columns
+    border = color("═" * (width-2), color_code)
+    print(color("╔" + border + "╗", color_code))
+    for line in message.split('\n'):
+        print(color("║ " + line.ljust(width-4) + " ║", color_code))
+    print(color("╚" + border + "╝", color_code))
+
 # ----------- INIT -----------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -126,6 +134,7 @@ try:
         api_hash = cfg['api_hash']
         session_str = cfg['session']
 except:
+    os.system('clear')
     afficher_logo()
     titre = rainbow("OBTENIR VOTRE API_ID ET API_HASH")
     print(titre.center(shutil.get_terminal_size().columns))
@@ -411,7 +420,8 @@ async def handler(event):
                 await asyncio.sleep(random.randint(2, 4))
                 await client.send_message("SmmKingdomTasksBot", "Instagram")
             else:
-                print(horloge_prefix() + color("[⛔] Aucune tâche active, mais aucun utilisateur sélectionné.", "1;31"))
+                encadre_message("⛔ Aucune tâche active\nAucun utilisateur sélectionné", "1;31")
+                print(color("💡 Astuce : Relance le bot ou vérifie les tâches disponibles.", "1;33"))
             return
 
         # Cas 4 : Message contenant lien + action
@@ -480,7 +490,7 @@ if __name__ == "__main__":
     afficher_logo()
     print(rainbow("🤖 Bienvenue sur TS Thermux 🤖").center(shutil.get_terminal_size().columns))
     separateur()
-    print(horloge() + color("🔄 Préparation des données...", "1;33"))
+    loading(horloge() + "🔄 Préparation des données...", 3)
     try:
         prepare_sessions_depuis_json()
         print(horloge() + color("✅ Données de session prêtes", "1;32"))
