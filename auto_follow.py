@@ -14,11 +14,14 @@ G, R, Y, C, W, B = '\033[92m', '\033[91m', '\033[93m', '\033[96m', '\033[0m', '\
 BASE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = BASE
 PROJECT_DIR = BASE
-IMAGE_DIR = os.path.join(BASE, 'images')
+# Dossier d'images sur Android (accessible depuis le gestionnaire de fichiers)
+IMAGE_DIR = "/storage/emulated/0/TS images"
+os.makedirs(IMAGE_DIR, exist_ok=True)
 SESSION_DIR = os.path.join(BASE, 'sessions')
 SELECTED_USER_PATH = os.path.join(BASE, 'selected_user.json')
 REPORT_PATH = os.path.join(BASE, 'config2', 'rapport.txt')
 LOGO_PATH = os.path.join(BASE, 'logo.sh')
+UTILISATEUR_PATH = os.path.join(BASE, 'utilisateur.json')
 
 os.makedirs(SESSION_DIR, exist_ok=True)
 
@@ -61,12 +64,16 @@ def extraire_username_depuis_lien(lien):
         return None
 
 def get_all_accounts():
-    fichiers = [f for f in os.listdir(CONFIG_DIR) if f.endswith(".json")]
+    utilisateurs = load_json(UTILISATEUR_PATH)
     comptes = []
-    for i, f in enumerate(fichiers):
-        data = load_json(os.path.join(CONFIG_DIR, f))
-        if data.get("username") and (data.get("password") or data.get("authorization_data")):
-            comptes.append((i + 1, data['username'], data))
+    # utilisateurs est une liste de {username: password}
+    users_dict = {}
+    for entry in utilisateurs:
+        if isinstance(entry, dict):
+            for username, passwd in entry.items():
+                users_dict[username] = passwd
+    for idx, (username, passwd) in enumerate(users_dict.items(), 1):
+        comptes.append((idx, username, {"password": passwd}))
     return comptes
 
 def choisir_comptes(comptes):
@@ -84,6 +91,43 @@ def choisir_comptes(comptes):
         print(f"{ts_time()}{R}[!] Mauvais choix.{W}")
         exit()
     return selection
+
+def login_via_session_or_credentials(username, credential_info):
+    """
+    Charge la session depuis sessions/{username}.json si présente,
+    sinon login avec identifiants puis sauvegarde la session pour la prochaine fois.
+    Aucun challenge ne sera traité.
+    """
+    client = Client()
+    session_path = os.path.join(SESSION_DIR, f"{username}.json")
+    if os.path.exists(session_path):
+        try:
+            with open(session_path, "r") as f:
+                settings_data = json.load(f)
+            settings = settings_data.get("settings", {})
+            client.set_settings(settings)
+            client.login(username, credential_info.get("password", ""))
+            print(f"{ts_time()}{G}[✓] Connexion via session pour @{username}{W}")
+            return client
+        except Exception as e:
+            print(f"{ts_time()}{R}[✗] Session invalide pour @{username} : {e}{W}")
+            os.remove(session_path)
+    # Si pas de session valide, login avec identifiants
+    if "password" in credential_info and credential_info["password"]:
+        try:
+            client.login(username, credential_info["password"])
+            # Récupère et sauvegarde les settings dans le même format
+            session_data = {"settings": client.get_settings(), "uuid": client.uuid}
+            with open(session_path, "w") as f:
+                json.dump(session_data, f, indent=4)
+            print(f"{ts_time()}{G}[✓] Connexion via credentials pour @{username}{W}")
+            return client
+        except Exception as e:
+            print(f"{ts_time()}{R}[✗] Connexion échouée pour @{username} : {e}{W}")
+            return None
+    else:
+        print(f"{ts_time()}{R}[!] Pas de password pour @{username} dans utilisateur.json{W}")
+        return None
 
 def follow_user(client, username_cible):
     try:
@@ -103,12 +147,10 @@ def publier_images(client, nombre_images):
     if not os.path.exists(IMAGE_DIR):
         print(f"{ts_time()}{R}[!] Dossier images introuvable : {IMAGE_DIR}{W}")
         return
-
     images = [os.path.join(IMAGE_DIR, img) for img in os.listdir(IMAGE_DIR) if img.lower().endswith((".jpg", ".png", ".jpeg"))]
     if not images:
         print(f"{ts_time()}{R}[!] Aucune image trouvée dans {IMAGE_DIR}{W}")
         return
-
     random.shuffle(images)
     images = images[:nombre_images]
     for image_path in images:
@@ -129,19 +171,6 @@ def liker_post(client, lien_post):
     except Exception as e:
         print(f"{ts_time()}{R}[✗] Erreur like : {e}{W}")
         return False
-
-def login_avec_settings(data):
-    username = data.get("username")
-    password = data.get("password")
-    client = Client()
-    try:
-        client.set_settings(data)
-        client.login(username, password)
-        print(f"{ts_time()}{G}[✓] Connexion réussie via settings pour @{username}{W}")
-        return client
-    except Exception as e:
-        print(f"{ts_time()}{R}[✗] Connexion échouée pour @{username} : {e}{W}")
-        return None
 
 def enregistrer_rapport(activites):
     os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
@@ -164,7 +193,7 @@ if __name__ == "__main__":
     comptes_dispo = get_all_accounts()
 
     if not comptes_dispo:
-        print(f"{ts_time()}{R}[!] Aucun compte trouvé dans {CONFIG_DIR}{W}")
+        print(f"{ts_time()}{R}[!] Aucun compte trouvé dans {UTILISATEUR_PATH}{W}")
         exit()
 
     comptes_utilises = choisir_comptes(comptes_dispo)
@@ -176,13 +205,11 @@ if __name__ == "__main__":
         if not cible:
             print(f"{ts_time()}{R}[!] Utilisateur invalide.{W}")
             exit()
-
         n_follow = int(input(f"{Y}Nombre de comptes pour suivre la cible : {W}"))
         suivis = 0
-
         for username, data in comptes_utilises:
             if suivis >= n_follow: break
-            client = login_avec_settings(data)
+            client = login_via_session_or_credentials(username, data)
             if client:
                 resultat = follow_user(client, cible)
                 if resultat:
@@ -197,7 +224,7 @@ if __name__ == "__main__":
         titre_section1("PUBLICATION AUTO")
         n_img = int(input(f"{Y}\nCombien d'images publier par compte ? {W}"))
         for username, data in comptes_utilises:
-            client = login_avec_settings(data)
+            client = login_via_session_or_credentials(username, data)
             if client:
                 publier_images(client, n_img)
                 activites.append(f"{username} → PUBLIÉ {n_img} images")
@@ -209,10 +236,9 @@ if __name__ == "__main__":
         lien = input(f"{Y}\nLien du post à liker : {W}").strip()
         n_like = int(input(f"{Y}Nombre de comptes pour liker ce post : {W}"))
         likes = 0
-
         for username, data in comptes_utilises:
             if likes >= n_like: break
-            client = login_avec_settings(data)
+            client = login_via_session_or_credentials(username, data)
             if client:
                 resultat = liker_post(client, lien)
                 if resultat:
