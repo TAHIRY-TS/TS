@@ -58,7 +58,7 @@ os.makedirs(SELECTED_USER_DIR, exist_ok=True)
 
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
 ERROR_LOG = os.path.join(LOGS_DIR, 'errors.txt')
-BLACKLIST_PATH = os.path.join(CONFIG_DIR, "blacklist.json")
+BLACKLIST_PATH = os.path.join(LOGS_DIR, "blacklist.json")
 UTILISATEUR_PATH = os.path.join(CONFIG_DIR, "utilisateur.json")
 TASK_DATA_PATH = os.path.join(CONFIG_DIR, "task_data.txt")
 
