@@ -188,8 +188,29 @@ def connexion_instagram_depuis_sessions(username):
         print(horloge(), color(f"⛔ Session source introuvable pour {username}", "1;31"))
         return None, None
     cl = charger_client_depuis_fichier(session_file)
-    # On NE teste plus la session ici ! (pas de get_timeline_feed, pas de login)
+    # Pas de vérification ici (pas de get_timeline_feed, pas de login)
     return cl, username
+
+def tentative_rattrapage_session(username):
+    """Tente de restaurer la session AVANT d'instancier le client IG pour la tâche."""
+    password = get_password(username)
+    session_file = os.path.join(SESSION_DIR, f"{username}.json")
+    cl = charger_client_depuis_fichier(session_file)
+    try:
+        cl.get_timeline_feed()
+        # Session déjà valide, rien à faire
+        return True
+    except Exception as e:
+        print(horloge_prefix() + color("[IG] Session expirée, tentative de reconnexion...", "1;33"))
+        try:
+            cl.login(username, password)
+            cl.dump_settings(session_file)
+            print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
+            return True
+        except Exception as e2:
+            print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
+            ajouter_a_blacklist(username, f"Login/Challenge/Checkpoint IG: {e2}")
+            return False
 
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
@@ -245,6 +266,7 @@ async def effectuer_action(cl, action, id_cible, comment_text=None, username=Non
             print(horloge_prefix() + color("[Action] Video view: attente 3s OK", "1;33"))
         return True
     except Exception as e:
+        # Si malgré la tentative avant, une erreur survient encore, on blacklist (très rare)
         err_str = str(e).lower()
         if "login required" in err_str or "challenge" in err_str or "checkpoint" in err_str:
             print(horloge_prefix() + color("[IG] Login/challenge/checkpoint requis. Compte blacklisté.", "1;31"))
@@ -324,13 +346,23 @@ async def handler(event):
             if not username:
                 print(horloge_prefix() + color("[⚠️] Aucun utilisateur sélectionné", "1;31"))
                 return
+
+            # Tentative de restauration de session AVANT action
+            if not tentative_rattrapage_session(username):
+                print(horloge_prefix() + color("[⚠️] Compte blacklisté ou non restaurable, skip tâche.", "1;31"))
+                await event.respond("❌Error")
+                await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+                return
+
             cl, _ = connexion_instagram_depuis_sessions(username)
             if not cl or not username:
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram échouée", "1;31"))
+                await event.respond("❌Error")
                 return
             id_cible = extraire_id_depuis_lien(cl, lien, action)
             if not id_cible:
                 print(horloge_prefix() + color("⛔ ID cible introuvable.", "1;31"))
+                await event.respond("❌Error")
                 return
             sauvegarder_task(lien, action, username)
             notifier_termux(f"{action.title()} | {lien}")
