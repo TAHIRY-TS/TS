@@ -16,12 +16,16 @@ SESSION_DIR = os.path.join(PROJECT_DIR, 'sessions')
 LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
 LOG_FILE = os.path.join(LOG_DIR, 'history.log')
 LOGO_PATH = os.path.join(PROJECT_DIR, 'logo.sh')
+UTILISATEUR_PATH = os.path.join(CONFIG_DIR, "utilisateur.json")
 
 # ----------- INIT DIRECTORIES -----------
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(SESSION_DIR, exist_ok=True)
 open(LOG_FILE, 'a').close()
 os.chmod(LOG_FILE, 0o600)
+if not os.path.exists(UTILISATEUR_PATH):
+    with open(UTILISATEUR_PATH, "w") as f:
+        json.dump([], f)
 
 # ----------- UTILS -----------
 def color(text, code):
@@ -68,29 +72,43 @@ def safe_input(prompt):
     except EOFError:
         return ''
 
-def enregistrer_utilisateur(username, password):
-    fichier_utilisateur = os.path.join(CONFIG_DIR, "utilisateur.json")
-    username = username.lower().strip()
-    # Charger les données existantes
-    if os.path.exists(fichier_utilisateur):
-        with open(fichier_utilisateur, "r") as f:
+def charger_utilisateurs():
+    if os.path.exists(UTILISATEUR_PATH):
+        with open(UTILISATEUR_PATH, "r") as f:
             try:
-                utilisateurs = json.load(f)
-            except json.JSONDecodeError:
-                utilisateurs = []
-    else:
-        utilisateurs = []
-    # Vérifier si le username existe déjà (insensible à la casse)
-    for utilisateur in utilisateurs:
-        if username in map(str.lower, utilisateur.keys()):
-            return
-    utilisateurs.append({username: password})
-    with open(fichier_utilisateur, "w") as f:
-        json.dump(utilisateurs, f, indent=4)
-    os.chmod(fichier_utilisateur, 0o600)
+                return json.load(f)
+            except Exception:
+                return []
+    return []
+
+def enregistrer_utilisateurs(utilisateurs):
+    # Nettoyage: pas de doublons, lower case, unique
+    clean = []
+    seen = set()
+    for item in utilisateurs:
+        for user, pwd in item.items():
+            user_lower = user.lower()
+            if user_lower not in seen:
+                clean.append({user_lower: pwd})
+                seen.add(user_lower)
+    with open(UTILISATEUR_PATH, "w") as f:
+        json.dump(clean, f, indent=4)
+    os.chmod(UTILISATEUR_PATH, 0o600)
+    return clean
+
+def enregistrer_utilisateur(username, password):
+    utilisateurs = charger_utilisateurs()
+    username = username.lower().strip()
+    found = False
+    for item in utilisateurs:
+        if username in item:
+            item[username] = password
+            found = True
+    if not found:
+        utilisateurs.append({username: password})
+    enregistrer_utilisateurs(utilisateurs)
 
 def generate_device_settings():
-    # Environnement Termux? Quelques valeurs par défaut sinon
     try:
         def getprop(x):
             return subprocess.check_output(['getprop', x], encoding='utf-8').strip()
@@ -107,7 +125,6 @@ def generate_device_settings():
             "version_code": "314665256"
         }
     except Exception:
-        # fallback safe for PC or unknown env
         return {
             "app_version": "269.0.0.18.75",
             "android_version": 33,
@@ -142,7 +159,6 @@ def generate_user_agent(settings):
     )
 
 def generate_settings(device_settings, uuids, user_agent, username):
-    # Patch minimal compatible avec instagrapi
     return {
         "uuids": uuids,
         "device_settings": device_settings,
@@ -155,40 +171,14 @@ def generate_settings(device_settings, uuids, user_agent, username):
         "last_login": int(time.time())
     }
 
-def main():
-    clear()
-    titre_section("AJOUTER UN COMPTE")
-    username = safe_input("Nom Instagram : ").strip()
-    if username.lower() == 'x':
-        print("Opération annulée.")
-        return
-    password = safe_input("Mot de passe : ").strip()
-    if password.lower() == 'x':
-        print("Opération annulée.")
-        return
-
-    if not username or not password:
-        erreur("Nom d'utilisateur et mot de passe requis.")
-        time.sleep(2)
-        return main()
-    username = username.strip()
-    filepath = os.path.join(CONFIG_DIR, f"{username}.json")
-    if os.path.exists(filepath):
-        erreur("Ce compte existe déjà.")
-        time.sleep(2)
-        return
-
+def generate_data(username, password):
     device_settings = generate_device_settings()
     uuids = generate_uuids()
     user_agent = generate_user_agent(device_settings)
     timestamp = int(time.time())
     settings = generate_settings(device_settings, uuids, user_agent, username)
-
-    # UID unique pour l'entrée
-    file_uid = str(uuid.uuid4())
-
-    data = {
-        "uid": file_uid,
+    return {
+        "uid": str(uuid.uuid4()),
         "username": username,
         "password": password,
         "settings": settings,
@@ -210,11 +200,53 @@ def main():
         "timezone_offset": -14400
     }
 
+def creer_fichier_utilisateur(username, password, force=False):
+    filepath = os.path.join(CONFIG_DIR, f"{username}.json")
+    if os.path.exists(filepath) and not force:
+        erreur(f"Le fichier source {username}.json existe déjà.")
+        return False
+    data = generate_data(username, password)
     with open(filepath, "w") as f:
         json.dump(data, f, indent=4)
     os.chmod(filepath, 0o600)
-    enregistrer_utilisateur(username, password)
+    # Toujours copier dans sessions/
+    shutil.copy(filepath, os.path.join(SESSION_DIR, f"{username}.json"))
+    os.chmod(os.path.join(SESSION_DIR, f"{username}.json"), 0o600)
+    return True
 
+def auto_repair_all_sources():
+    utilisateurs = charger_utilisateurs()
+    for item in utilisateurs:
+        username, password = list(item.items())[0]
+        creer_fichier_utilisateur(username, password, force=True)
+        success(f"Source session pour {username} régénérée.")
+    print(color("Tous les fichiers sources ont été (re)générés et synchronisés avec utilisateur.json.", "1;32"))
+    time.sleep(2)
+
+def main():
+    clear()
+    titre_section("AJOUTER UN COMPTE")
+    username = safe_input("Nom Instagram : ").strip().lower()
+    if username == 'x':
+        print("Opération annulée.")
+        return
+    password = safe_input("Mot de passe : ").strip()
+    if password.lower() == 'x':
+        print("Opération annulée.")
+        return
+
+    if not username or not password:
+        erreur("Nom d'utilisateur et mot de passe requis.")
+        time.sleep(2)
+        return main()
+    filepath = os.path.join(CONFIG_DIR, f"{username}.json")
+    if os.path.exists(filepath):
+        erreur("Ce compte existe déjà.")
+        time.sleep(2)
+        return
+
+    creer_fichier_utilisateur(username, password, force=True)
+    enregistrer_utilisateur(username, password)
     success(f"Compte {username} ajouté.")
     log_action("ajouté", username)
     time.sleep(1.5)
@@ -247,27 +279,6 @@ def lister_comptes():
         print(color(f"[{idx}] {nom}", "1;33"))
     return fichiers
 
-def nettoyer_sessions_orphelines():
-    clear()
-    titre_section("NETTOYAGE DES SESSIONS ORPHELINES")
-    configs = [f.replace('.json', '') for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
-    sessions = [f for f in os.listdir(SESSION_DIR) if f.endswith('.session')]
-    supprimés = 0
-    for session_file in sessions:
-        username = session_file.replace('.session', '')
-        if username not in configs:
-            try:
-                os.remove(os.path.join(SESSION_DIR, session_file))
-                print(color(f"[SUPPRIMÉ] {session_file}", "1;33"))
-                supprimés += 1
-            except Exception as e:
-                erreur(f"Erreur suppression {session_file}: {e}")
-    if supprimés:
-        info(f"{supprimés} session(s) supprimée(s).")
-    else:
-        info("Aucune session orpheline.")
-    safe_input("Appuyez sur Entrée pour revenir au menu...")
-
 def supprimer_compte():
     fichiers = lister_comptes()
     print(color("\nEntrez les numéros des comptes à supprimer (ex: 1 ou 1,2,3), ou 'x' pour quitter.", "1;35"))
@@ -294,11 +305,15 @@ def supprimer_compte():
     for username in usernames:
         fichiers_cible = [
             os.path.join(CONFIG_DIR, f"{username}.json"),
-            os.path.join(SESSION_DIR, f"{username}.session")
+            os.path.join(SESSION_DIR, f"{username}.json"),
         ]
         for f in fichiers_cible:
             if os.path.exists(f):
                 os.remove(f)
+        # Supprime du utilisateur.json aussi
+        utilisateurs = charger_utilisateurs()
+        utilisateurs = [u for u in utilisateurs if username not in u]
+        enregistrer_utilisateurs(utilisateurs)
         print(color(f"[SUPPRIMÉ] Compte {username} supprimé.", "1;31"))
         log_action("supprimé", username)
     safe_input("Appuyez sur Entrée...")
@@ -310,8 +325,7 @@ def menu():
         print("1. 📌 Ajouter un compte")
         print("2. 📝 Lister les comptes")
         print("3. 🚫 Supprimer un compte")
-        print("4. 🔄 Reconnection des comptes")
-        print("5. 🗑️ Nettoyage de session inutile")
+        print("4. ♻️ Regénérer tous les fichiers source depuis utilisateur.json")
         print("0. 🔙 Quitter")
         choix = safe_input("\nChoix: ")
         if choix == '1':
@@ -322,12 +336,8 @@ def menu():
         elif choix == '3':
             supprimer_compte()
         elif choix == '4':
-            for i in range(3, 0, -1):
-                print(color(f"Ouverture de script de reconnection dans {i} secondes...", "1;36"), end='\r')
-                time.sleep(3)
-                os.execvp("python", ["python", os.path.join(PROJECT_DIR, "ts_login.py")])
-        elif choix == '5':
-            nettoyer_sessions_orphelines()
+            auto_repair_all_sources()
+            safe_input("Appuyez sur Entrée pour revenir au menu...")
         elif choix == '0':
             for i in range(3, 0, -1):
                 print(color(f"Retour à l'accueil dans {i} secondes ...", "1;36"), end='\r')
