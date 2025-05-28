@@ -261,6 +261,8 @@ def get_password(username):
                 return item[username]
     return None
 
+# ... (toutes tes définitions d'ambiance et autres sont inchangées)
+
 def connexion_instagram(username):
     selected_file = os.path.join(SELECTED_USER_DIR, f"{username}.json")
     if not os.path.exists(selected_file):
@@ -276,6 +278,27 @@ def connexion_instagram(username):
     try:
         with open(selected_file, "r") as f:
             session_data = json.load(f)
+
+        # ---- PATCH: migrate legacy session to new format if needed ----
+        if "settings" not in session_data:
+            # On essaye de reconstruire un bloc settings à partir des champs présents
+            settings = {
+                "uuids": session_data.get("uuids"),
+                "device_settings": session_data.get("device_settings"),
+                "user_agent": session_data.get("user_agent"),
+                "country": session_data.get("country", "US"),
+                "country_code": session_data.get("country_code", 1),
+                "locale": session_data.get("locale", "en_US"),
+                "timezone_offset": session_data.get("timezone_offset", -14400),
+                "username": username,
+                "last_login": session_data.get("last_login", int(time.time()))
+            }
+            session_data["settings"] = settings
+            # Sauvegarde la migration (une fois pour toutes)
+            with open(selected_file, "w") as f2:
+                json.dump(session_data, f2, indent=4)
+            print(horloge(), color(f"[AUTO-MIGRATION] Session {username} mise à jour au format attendu.", "1;33"))
+
         cl.load_settings(session_data["settings"])
         if "authorization_data" in session_data:
             cl.authorization_data = session_data["authorization_data"]
@@ -302,6 +325,8 @@ def connexion_instagram(username):
         ajouter_a_blacklist(username, f"Connexion échouée : {e}")
         print(horloge(), clignote(color(f"❌ Connexion échouée pour {username} : {e}", "1;31")))
         return None
+
+# ... (le reste du script inchangé)
 
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
