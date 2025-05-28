@@ -18,6 +18,7 @@ from telethon import events
 from instagrapi import Client as IGClient
 
 # ----------- AMBIANCE & UTILS -----------
+def afficher_logo()
 
 def color(text, code):
     return f"\033[{code}m{text}\033[0m"
