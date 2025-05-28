@@ -76,7 +76,7 @@ def encadre_message(message, color_code="1;36"):
 # ----------- INIT -----------
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SESSION_DIR = BASE_DIR
+SESSION_DIR = os.path.join(BASE_DIR, 'sessions')
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 CONFIG_DIR = BASE_DIR
 SELECTED_USER_DIR = os.path.join(BASE_DIR, 'selected_user')
