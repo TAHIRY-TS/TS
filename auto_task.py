@@ -14,7 +14,13 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import events
 
-from proxy_manager import setup_instagrapi_client, get_proxy_for_user
+from proxy_manager import (
+    setup_instagrapi_client,
+    choisir_proxy_rotation,
+    refresh_and_validate_proxies,
+    start_proxy_refresher,
+    get_valid_proxies,
+)
 
 # ----------- PATHS & UTILS -----------
 
@@ -94,8 +100,9 @@ def charger_client_depuis_session3(username):
         return None
     with open(session_file, "r") as f:
         session_data = json.load(f)
+    proxy = choisir_proxy_rotation()
     try:
-        cl = setup_instagrapi_client(username, password, session_data=session_data)
+        cl = setup_instagrapi_client(username, password, session_data=session_data, proxy=proxy)
         return cl
     except Exception as e:
         print(horloge_prefix() + color(f"Erreur lors de l'initialisation du client IG ({username}): {e}", "1;31"))
@@ -125,7 +132,9 @@ def tentative_rattrapage_session(username):
     except Exception as e:
         print(horloge_prefix() + color("[IG] Session expirée, tentative de reconnexion...", "1;33"))
         try:
+            proxy = choisir_proxy_rotation()
             cl.login(username, password)
+            cl.set_proxy(proxy)
             cl.dump_settings(session_file)
             with open(SESSION_JOURNAL, "a") as f:
                 f.write(f"{datetime.now().isoformat()} {username}: RESTORED SESSION\n")
@@ -141,7 +150,10 @@ def tentative_rattrapage_session(username):
 def connexion_instagram_depuis_session3(username):
     session_file = session3_file(username)
     if not os.path.exists(session_file): return None, None
+    proxy = choisir_proxy_rotation()
     cl = charger_client_depuis_session3(username)
+    if proxy and cl:
+        cl.set_proxy(proxy)
     return cl, username
 
 def extraire_infos(msg):
@@ -177,6 +189,8 @@ async def effectuer_action(
 ):
     MAX_TRIES = 2
     try:
+        # Humanisation : délais variables
+        await asyncio.sleep(random.uniform(1.5, 3.8))
         if action == "follow":
             cl.user_follow(id_cible)
         elif action == "like":
@@ -188,11 +202,11 @@ async def effectuer_action(
             cl.media_comment(id_cible, comment_text)
         elif action == "story view":
             cl.story_seen([id_cible])
-            await asyncio.sleep(3)
+            await asyncio.sleep(random.uniform(2.5, 6.0))
         elif action == "video view":
             cl.media_like(id_cible)
-            await asyncio.sleep(3)
-        await asyncio.sleep(random.randint(4, 10))
+            await asyncio.sleep(random.uniform(2.5, 6.0))
+        await asyncio.sleep(random.uniform(4, 12))
         return True
     except Exception as e:
         err_str = str(e).lower()
@@ -202,7 +216,8 @@ async def effectuer_action(
             if os.path.exists(session_path):
                 os.remove(session_path)
             try:
-                cl2 = setup_instagrapi_client(username, get_password(username))
+                proxy = choisir_proxy_rotation()
+                cl2 = setup_instagrapi_client(username, get_password(username), proxy=proxy)
                 cl2.dump_settings(session_path)
                 print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
                 return await effectuer_action(cl2, action, id_cible, comment_text, username, tries=tries+1)
@@ -224,7 +239,11 @@ def sauvegarder_task(lien, action, username):
         f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
 
 # ----------- SYNCHRONISATION SESSION3 AU DEMARRAGE -----------
+
 sync_all_session3()
+
+# ----------- PROXY REFRESHER LANCEMENT (illimité) ----------
+start_proxy_refresher()
 
 # ----------- TELEGRAM -----------
 
@@ -277,7 +296,7 @@ async def handler(event):
                 print(horloge_prefix() + color("[❌] Echec du commentaire", "1;31"))
                 await event.respond("❌Error")
             pending_comment = None
-            await asyncio.sleep(random.randint(5, 10))
+            await asyncio.sleep(random.uniform(5, 10))
             await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
             return
 
@@ -287,20 +306,20 @@ async def handler(event):
             if current_user is None:
                 return
             print(horloge_prefix() + color(f"[🔍] Recherche de tache pour: {current_user}", "1;36"))
-            await asyncio.sleep(random.randint(2, 4))
+            await asyncio.sleep(random.uniform(2, 4))
             await client.send_message("SmmKingdomTasksBot", current_user)
             return
 
         if ("choose social network" in msg or "current status" in msg):
             print(horloge_prefix() + color("[🎯] Social network: Instagram", "1;36"))
-            await asyncio.sleep(random.randint(2, 4))
+            await asyncio.sleep(random.uniform(2, 4))
             await client.send_message("SmmKingdomTasksBot", "Instagram")
             return
 
         if "no active tasks" in msg:
             if current_user:
                 print(horloge_prefix() + color(f"[⛔] Aucune tâche sur {current_user}", "1;33"))
-                await asyncio.sleep(random.randint(2, 4))
+                await asyncio.sleep(random.uniform(2, 4))
                 await client.send_message("SmmKingdomTasksBot", "Instagram")
             else:
                 print(color("💡 Astuce : Relance le bot ou vérifie les tâches disponibles.", "1;33"))
@@ -350,11 +369,11 @@ async def handler(event):
             result = await effectuer_action(cl, action, id_cible, username=username)
             if result:
                 print(horloge_prefix() + color("[✅] Tâche réussie", "1;32"))
-                await asyncio.sleep(random.randint(5, 10))
+                await asyncio.sleep(random.uniform(5, 10))
                 await event.respond("✅Completed")
             else:
                 print(horloge_prefix() + color("[❌] Tâche échouée", "1;31"))
-            await asyncio.sleep(random.randint(5, 10))
+            await asyncio.sleep(random.uniform(5, 10))
             await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
             return
 
