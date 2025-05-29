@@ -13,7 +13,8 @@ from datetime import datetime
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import events
-from instagrapi import Client as IGClient
+
+from proxy_manager import setup_instagrapi_client, get_proxy_for_user
 
 # ----------- PATHS & UTILS -----------
 
@@ -88,14 +89,18 @@ def charger_client_depuis_session3(username):
     session_file = session3_file(username)
     if not os.path.exists(session_file):
         return None
-    cl = IGClient()
+    password = get_password(username)
+    if not password:
+        return None
     with open(session_file, "r") as f:
         session_data = json.load(f)
-    if "settings" in session_data:
-        cl.set_settings(session_data["settings"])
-    else:
-        cl.set_settings(session_data)
-    return cl
+    try:
+        cl = setup_instagrapi_client(username, password, session_data=session_data)
+        return cl
+    except Exception as e:
+        print(horloge_prefix() + color(f"Erreur lors de l'initialisation du client IG ({username}): {e}", "1;31"))
+        ajouter_a_blacklist(username, str(e))
+        return None
 
 def choisir_utilisateur_random_avec_session3():
     utilisateurs = get_utilisateurs()
@@ -184,6 +189,7 @@ async def effectuer_action(cl, action, id_cible, comment_text=None, username=Non
         elif action == "video view":
             cl.media_like(id_cible)
             await asyncio.sleep(3)
+        await asyncio.sleep(random.randint(4, 10))  # Pause pour simuler un humain
         return True
     except Exception as e:
         err_str = str(e).lower()
@@ -213,6 +219,7 @@ async def effectuer_action(cl, action, id_cible, comment_text=None, username=Non
                     elif action == "video view":
                         cl2.media_like(id_cible)
                         await asyncio.sleep(3)
+                    await asyncio.sleep(random.randint(4, 10))
                     return True
                 except Exception as e2:
                     print(horloge_prefix() + color("[IG] Echec après restauration: " + str(e2), "1;31"))
