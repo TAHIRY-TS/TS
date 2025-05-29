@@ -161,21 +161,21 @@ def supprimer_blacklist_user(username):
     enregistrer_utilisateurs(utilisateurs, BLACKLIST_SESSION)
     print(color(f"[SUPPRIMÉ] {username} supprimé de la blacklist.", "1;31"))
 
-def get_android_device_properties():
-    """Détecte les infos de l'appareil Android via adb, sinon valeurs par défaut."""
+def getprop(prop, default=""):
     try:
-        def adb_prop(prop):
-            return subprocess.check_output(['adb', 'shell', 'getprop', prop], encoding='utf8').strip()
-        manufacturer = adb_prop('ro.product.manufacturer') or "samsung"
-        device = adb_prop('ro.product.device') or "beyond1"
-        model = adb_prop('ro.product.model') or "SM-G973F"
-        cpu = adb_prop('ro.product.board') or "exynos9820"
-        android_version = adb_prop('ro.build.version.sdk') or "33"
-        android_release = adb_prop('ro.build.version.release') or "13"
-        return manufacturer, device, model, cpu, android_version, android_release
+        return subprocess.check_output(['getprop', prop], encoding='utf8').strip() or default
     except Exception:
-        # Valeurs par défaut si pas d'adb/device
-        return "samsung", "beyond1", "SM-G973F", "exynos9820", "33", "13"
+        return default
+
+def get_android_device_properties():
+    # Fonctionne sur Termux sans root, lit les vraies infos!
+    manufacturer = getprop('ro.product.manufacturer', 'samsung')
+    device = getprop('ro.product.device', 'beyond1')
+    model = getprop('ro.product.model', 'SM-G973F')
+    cpu = getprop('ro.product.board', 'exynos9820')
+    android_version = getprop('ro.build.version.sdk', '33')
+    android_release = getprop('ro.build.version.release', '13')
+    return manufacturer, device, model, cpu, android_version, android_release
 
 def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=None, base_dir=CONFIG_DIR, force=False):
     filepath = os.path.join(base_dir, f"{username}.json")
