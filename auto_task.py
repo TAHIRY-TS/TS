@@ -217,12 +217,13 @@ current_user = None
 pending_comment = None
 last_user = None
 
-@client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
+@client.on(events.NewMessage)
 async def handler(event):
     global current_user, pending_comment, last_user
-    msg_raw = event.raw_text
-    msg = msg_raw.lower()
     try:
+        msg_raw = event.raw_text
+        msg = msg_raw.lower()
+        print(f"[DEBUG] Message reçu: {msg_raw}")
         if pending_comment is not None:
             comment_text = event.raw_text.strip()
             cl = pending_comment["cl"]
@@ -246,6 +247,7 @@ async def handler(event):
             "⭕️ please choose account from the list" in msg):
             current_user = choisir_utilisateur_random_avec_session3(exclude_last=last_user)
             if current_user is None:
+                print(horloge_prefix() + color("[❌] Aucun utilisateur valide trouvé!", "1;31"))
                 return
             last_user = current_user
             print(horloge_prefix() + color(f"[🔍] Recherche de tache pour: {current_user}", "1;36"))
@@ -268,7 +270,15 @@ async def handler(event):
                 await asyncio.sleep(random.uniform(2, 4))
                 await client.send_message("SmmKingdomTasksBot", "Instagram")
             else:
-                print(color("💡 Astuce : Relance le bot ou vérifie les tâches disponibles.", "1;33"))
+                # Correction : On tente un nouvel utilisateur automatiquement
+                current_user = choisir_utilisateur_random_avec_session3(exclude_last=last_user)
+                last_user = current_user
+                if current_user:
+                    print(horloge_prefix() + color(f"[🔄] Sélection d'un nouvel utilisateur : {current_user}", "1;36"))
+                    await asyncio.sleep(random.uniform(2, 4))
+                    await client.send_message("SmmKingdomTasksBot", current_user)
+                else:
+                    print(color("💡 Aucune session valide disponible. Vérifiez vos comptes.", "1;31"))
             return
 
         if "▪️" in msg and "link" in msg and "action" in msg:
@@ -375,7 +385,7 @@ async def effectuer_action(
         return True
     except Exception as e:
         err_str = str(e).lower()
-        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < 2:
+        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < MAX_TRIES:
             print(horloge_prefix() + color("[IG] Session expirée/corrompue, suppression et tentative de reconnexion...", "1;33"))
             session_path = session3_file(username)
             if os.path.exists(session_path):
