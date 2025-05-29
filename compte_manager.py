@@ -10,7 +10,7 @@ import shutil
 import random
 from datetime import datetime
 
-from proxy_manager import setup_instagrapi_client, get_proxy_for_user
+from proxy_manager import setup_instagrapi_client, choisir_proxy_rotation
 
 # ----------- CONFIG PATHS -----------
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -161,6 +161,22 @@ def supprimer_blacklist_user(username):
     enregistrer_utilisateurs(utilisateurs, BLACKLIST_SESSION)
     print(color(f"[SUPPRIMÉ] {username} supprimé de la blacklist.", "1;31"))
 
+def get_android_device_properties():
+    """Détecte les infos de l'appareil Android via adb, sinon valeurs par défaut."""
+    try:
+        def adb_prop(prop):
+            return subprocess.check_output(['adb', 'shell', 'getprop', prop], encoding='utf8').strip()
+        manufacturer = adb_prop('ro.product.manufacturer') or "samsung"
+        device = adb_prop('ro.product.device') or "beyond1"
+        model = adb_prop('ro.product.model') or "SM-G973F"
+        cpu = adb_prop('ro.product.board') or "exynos9820"
+        android_version = adb_prop('ro.build.version.sdk') or "33"
+        android_release = adb_prop('ro.build.version.release') or "13"
+        return manufacturer, device, model, cpu, android_version, android_release
+    except Exception:
+        # Valeurs par défaut si pas d'adb/device
+        return "samsung", "beyond1", "SM-G973F", "exynos9820", "33", "13"
+
 def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=None, base_dir=CONFIG_DIR, force=False):
     filepath = os.path.join(base_dir, f"{username}.json")
     if os.path.exists(filepath) and not force:
@@ -171,6 +187,8 @@ def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=Non
         sessionid = f"{str(uuid.uuid4().int)[:11]}%3A{uuid.uuid4().hex[:16]}%3A24%3AAY{uuid.uuid4().hex[:24]}"
     if not ds_user_id:
         ds_user_id = str(uuid.uuid4().int)[:11]
+
+    manufacturer, device, model, cpu, android_version, android_release = get_android_device_properties()
 
     data = {
         "uuids": {
@@ -193,17 +211,17 @@ def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=Non
         "last_login": time.time(),
         "device_settings": {
             "app_version": version_name,
-            "android_version": "33",
-            "android_release": "13",
+            "android_version": android_version,
+            "android_release": android_release,
             "dpi": dpi,
             "resolution": resolution,
-            "manufacturer": "samsung",
-            "device": "beyond1",
-            "model": "SM-G973F",
-            "cpu": "exynos9820",
+            "manufacturer": manufacturer,
+            "device": device,
+            "model": model,
+            "cpu": cpu,
             "version_code": version_code
         },
-        "user_agent": f"Instagram {version_name} Android (33/13; {dpi}; {resolution}; samsung; SM-G973F; beyond1; exynos9820; en_US; {version_code})",
+        "user_agent": f"Instagram {version_name} Android ({android_version}/{android_release}; {dpi}; {resolution}; {manufacturer}; {model}; {device}; {cpu}; en_US; {version_code})",
         "country": "US",
         "country_code": 1,
         "locale": "en_US",
@@ -233,9 +251,9 @@ def sleep_human(min_sec=10, max_sec=30):
     time.sleep(attente)
 
 def test_connexion_utilisateur(username, password):
-    proxy = get_proxy_for_user(username)
+    proxy = choisir_proxy_rotation()
     try:
-        cl = setup_instagrapi_client(username, password)
+        cl = setup_instagrapi_client(username, password, proxy=proxy)
         cl.get_timeline_feed()
         success(f"Connexion réussie pour {username} (proxy: {proxy if proxy else 'AUCUN'})")
         log_action("SUCCES", username, proxy)
