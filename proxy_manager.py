@@ -6,12 +6,8 @@ import time
 from collections import defaultdict
 
 PROXY_LIST_SOURCES = [
-    # Privilégie ici tes propres proxies semi-privés si tu en as !
-    "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-https.txt",
-    "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/https.txt",
-    "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/https.txt",
-    # Ajoute ici tout lien ou fichier privé de proxies semi-privés
-]
+    curl ''https://realtime.oxylabs.io/v1/queries'' --user 'Andriatefy_QwbDb:tefy2552~Tefy' -H 'Content-Type: application/json' -d '{"source": "amazon_product", "query": "B07FZ8S74R", "geo_location": "90210", "parse": true}' 
+ ]
 PROXY_VALID_PATH = "proxies_valides.json"
 PROXY_BLACKLIST_PATH = "proxies_blacklist.json"
 PROXY_SESSION_PATH = "proxies_alloc.json"
