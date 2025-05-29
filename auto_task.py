@@ -8,6 +8,7 @@ import json
 import time
 import asyncio
 import random
+import shutil
 from datetime import datetime
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -51,10 +52,17 @@ def ajouter_a_blacklist(username, raison="Erreur session"):
         with open(BLACKLIST_PATH, "w") as f:
             json.dump(liste, f, indent=4)
 
+def session3_dir(username):
+    return os.path.join(CONFIG_DIR, f"{username}_session3")
+
+def session3_file(username):
+    return os.path.join(session3_dir(username), f"{username}_ig_session.json")
+
 def session3_exists(username):
-    d = os.path.join(CONFIG_DIR, f"{username}_session3")
-    f = os.path.join(d, f"{username}_ig_session.json")
-    return os.path.exists(f)
+    return os.path.exists(session3_file(username))
+
+def source_json_file(username):
+    return os.path.join(CONFIG_DIR, f"{username}.json")
 
 def get_password(username):
     utilisateurs = get_utilisateurs()
@@ -62,10 +70,6 @@ def get_password(username):
         if user == username:
             return pwd
     return None
-
-def session3_file(username):
-    d = os.path.join(CONFIG_DIR, f"{username}_session3")
-    return os.path.join(d, f"{username}_ig_session.json")
 
 def charger_client_depuis_session3(username):
     session_file = session3_file(username)
@@ -216,6 +220,24 @@ def sauvegarder_task(lien, action, username):
     with open(TASK_DATA_PATH, "a") as f:
         f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
 
+# ----------- SYNCHRONISATION SESSION3 AU DEMARRAGE -----------
+
+def sync_all_session3():
+    utilisateurs = get_utilisateurs()
+    for username, _ in utilisateurs:
+        src = source_json_file(username)
+        dst_dir = session3_dir(username)
+        dst = session3_file(username)
+        if os.path.exists(src):
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir, exist_ok=True)
+            # Toujours copier : même si déjà présent, on veut la dernière version du .json
+            shutil.copy2(src, dst)
+            # Permissions restrictives
+            os.chmod(dst, 0o600)
+        else:
+            print(color(f"[WARNING] Fichier source JSON absent pour {username}, pas de session3.", "1;33"))
+
 # ----------- TELEGRAM -----------
 
 try:
@@ -365,6 +387,9 @@ async def handler(event):
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
 if __name__ == "__main__":
+    # ------ Synchronise toutes les sessions3 à partir des fichiers source .json ------
+    sync_all_session3()
+
     os.system('clear')
     print(color("🤖 Bienvenue sur TS Thermux 🤖", "1;36").center(os.get_terminal_size().columns))
     try:
