@@ -119,13 +119,15 @@ def get_wm_info(field):
         output = subprocess.check_output(['wm', field]).decode().strip()
         return output.split(": ")[1]
     except Exception:
+        dpi = "410",
+        resolution = "1080x1920"
         return None
 
 def get_app_info(package_name):
     try:
         output = subprocess.check_output(['dumpsys', 'package', package_name]).decode()
         version_name = None
-        version_code = None
+        version_code = 314665256
         for line in output.splitlines():
             if 'versionName=' in line:
                 version_name = line.split('=')[1].strip()
@@ -166,7 +168,7 @@ def generate_user_agent(device_settings):
     return (
         f"Instagram {device_settings['app_version']} Android "
         f"({device_settings['android_version']}/{device_settings['android_release']}; "
-        f"{device_settings['dpi']}; {device_settings['resolution']}; "
+        f"{device_settings['dpi'}dpi; {device_settings['resolution']}; "
         f"{device_settings['manufacturer']}; {device_settings['model']}; "
         f"{device_settings['device']}; {device_settings['cpu']}; en_US; {device_settings['version_code']})"
     )
