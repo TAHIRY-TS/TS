@@ -2,17 +2,57 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
+import sys
 import json
 import uuid
 import subprocess
 import time
 import shutil
 import random
+import asyncio
 from datetime import datetime
+import requests
+from requests.auth import HTTPBasicAuth
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
+from telethon import events
 
-from proxy_manager import setup_instagrapi_client, choisir_proxy_rotation
+# ----------- OXYLABS CONFIGURATION -----------
+OX_USER = "Andriatefy_QwbDb"
+OX_PASS = "tefy2552~Tefy"
+OXY_COUNTRIES = ["US", "FR", "DE", "GB", "CA", "NL", "ES", "IT", "SE"]
 
-# ----------- CONFIG PATHS -----------
+def get_oxylabs_proxy():
+    country = random.choice(OXY_COUNTRIES)
+    return f"http://customer-{OX_USER}-cc-{country}:{OX_PASS}@pr.oxylabs.io:7777"
+
+def choisir_proxy_rotation(username=None, avoid_in_use=True):
+    return get_oxylabs_proxy()
+
+def blacklist_proxy(proxy): pass
+def release_proxy(proxy, username=None): pass
+
+def setup_instagrapi_client(username, password, session_data=None, proxy=None):
+    from instagrapi import Client
+    cl = Client()
+    devices = [
+        ("samsung", "SM-G991B", "31", "12.0.0", "220105"),
+        ("huawei", "ANA-NX9", "30", "11.0.0", "210101"),
+        ("xiaomi", "M2007J3SY", "30", "11.0.0", "210201"),
+        ("oneplus", "DN2103", "30", "11.0.0", "210103"),
+        ("oppo", "CPH2207", "29", "10.0.0", "200604")
+    ]
+    device = random.choice(devices)
+    cl.set_device(*device)
+    if proxy:
+        cl.set_proxy(proxy)
+    if session_data:
+        cl.set_settings(session_data)
+    cl.login(username, password)
+    return cl
+
+# ----------- PATHS & UTILS -----------
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = PROJECT_DIR
 LOG_DIR = os.path.join(PROJECT_DIR, 'logs')
@@ -20,27 +60,34 @@ LOG_FILE = os.path.join(LOG_DIR, 'history.log')
 LOGO_PATH = os.path.join(PROJECT_DIR, 'logo.sh')
 UTILISATEUR_SESSION = os.path.join(CONFIG_DIR, "utilisateur.session")
 BLACKLIST_SESSION = os.path.join(CONFIG_DIR, "blacklist.session")
-
-os.makedirs(LOG_DIR, exist_ok=True)
-open(LOG_FILE, 'a').close()
-os.chmod(LOG_FILE, 0o600)
-if not os.path.exists(UTILISATEUR_SESSION):
-    open(UTILISATEUR_SESSION, "w").close()
-if not os.path.exists(BLACKLIST_SESSION):
-    open(BLACKLIST_SESSION, "w").close()
+BLACKLIST_PATH = os.path.join(CONFIG_DIR, "blacklist.json")
+ERROR_LOG = os.path.join(LOG_DIR, "errors.txt")
+CONFIG_PATH = os.path.join(CONFIG_DIR, 'config.json')
+TASK_DATA_PATH = os.path.join(CONFIG_DIR, "task_data.txt")
+SESSION_JOURNAL = os.path.join(CONFIG_DIR, "session.session_journal")
 
 dpi = "410dpi"
 resolution = "1080x1920"
 version_name = "269.0.0.18.75"
 version_code = "314665256"
 
-# ----------- UTILS -----------
+os.makedirs(LOG_DIR, exist_ok=True)
+open(LOG_FILE, 'a').close()
+os.chmod(LOG_FILE, 0o600)
+for fname in [UTILISATEUR_SESSION, BLACKLIST_SESSION]:
+    if not os.path.exists(fname):
+        open(fname, "w").close()
+
 def color(text, code):
     return f"\033[{code}m{text}\033[0m"
 
+def horloge():
+    return datetime.now().strftime("[TS %H:%M:%S]")
+
+def horloge_prefix():
+    return color(horloge(), "1;34") + " "
+
 def titre_section(titre):
-    if os.path.exists(LOGO_PATH):
-        subprocess.call(['bash', LOGO_PATH])
     largeur = 50
     try:
         terminal_width = os.get_terminal_size().columns
@@ -54,9 +101,6 @@ def titre_section(titre):
 
 def clear():
     os.system('clear' if os.name == 'posix' else 'cls')
-
-def horloge():
-    return datetime.now().strftime("[TS %H:%M:%S]")
 
 def log_action(action, username, proxy=None):
     with open(LOG_FILE, 'a') as log:
@@ -168,7 +212,6 @@ def getprop(prop, default=""):
         return default
 
 def get_android_device_properties():
-    # Fonctionne sur Termux sans root, lit les vraies infos!
     manufacturer = getprop('ro.product.manufacturer', 'samsung')
     device = getprop('ro.product.device', 'beyond1')
     model = getprop('ro.product.model', 'SM-G973F')
@@ -243,8 +286,6 @@ def auto_repair_all_sources():
     print(color("Tous les fichiers sources ont été (re)générés et synchronisés avec utilisateur.session.", "1;32"))
     time.sleep(2)
 
-# ----------- ANTI-BLOCKAGE ET PROXY INSTAGRAM -----------
-
 def sleep_human(min_sec=10, max_sec=30):
     attente = random.randint(min_sec, max_sec)
     info(f"Pause de {attente} secondes pour simuler un comportement humain et limiter le blocage Instagram...")
@@ -263,6 +304,9 @@ def test_connexion_utilisateur(username, password):
         log_action("ECHEC", username, proxy)
         blacklist_user(username)
         return None
+
+# ----------- TELEGRAM BLOC INSTAGRAM AUTO (FACULTATIF) -----------
+# (Ajoutez ici le bloc Telegram si vous voulez l'automatisation avec Telegram comme dans le script précédent)
 
 # ----------- MENUS -----------
 
