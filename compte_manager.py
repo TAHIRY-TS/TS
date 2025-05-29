@@ -168,7 +168,7 @@ def generate_user_agent(device_settings):
     return (
         f"Instagram {device_settings['app_version']} Android "
         f"({device_settings['android_version']}/{device_settings['android_release']}; "
-        f"{device_settings['dpi'}dpi; {device_settings['resolution']}; "
+        f"{device_settings['dpi']}; {device_settings['resolution']}; "
         f"{device_settings['manufacturer']}; {device_settings['model']}; "
         f"{device_settings['device']}; {device_settings['cpu']}; en_US; {device_settings['version_code']})"
     )
