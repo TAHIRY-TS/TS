@@ -6,21 +6,24 @@ import time
 from collections import defaultdict
 
 PROXY_LIST_SOURCES = [
-    # Privilégier des sources moins connues ou tes propres listes semi-privées si dispo
+    # Privilégie ici tes propres proxies semi-privés si tu en as !
     "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies-https.txt",
     "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/https.txt",
     "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/https.txt",
-    # ... Ajoute ici tes propres sources, fichiers privés, etc.
+    # Ajoute ici tout lien ou fichier privé de proxies semi-privés
 ]
 PROXY_VALID_PATH = "proxies_valides.json"
 PROXY_BLACKLIST_PATH = "proxies_blacklist.json"
 PROXY_SESSION_PATH = "proxies_alloc.json"
-PROXY_REFRESH_INTERVAL = 15 * 30 # 20 minutes
+PROXY_REFRESH_INTERVAL = 20 * 60  # 20 minutes
 
-# Pour éviter de réutiliser le même proxy pour plusieurs users en même temps
-proxy_usage = defaultdict(int)
-proxy_last_used = {}
-proxy_blacklist = set()
+# Gestion de l'utilisation des proxies et blacklist
+proxy_usage = defaultdict(int)      # proxy => nombre d'utilisateurs simultanés
+proxy_last_used = {}                # proxy => timestamp
+proxy_blacklist = set()             # proxies blacklistés
+user_proxy_allocation = {}          # username => proxy
+
+# ----------- PROXY MANAGEMENT -----------
 
 def fetch_proxies() -> set:
     proxies = set()
@@ -30,7 +33,7 @@ def fetch_proxies() -> set:
             if resp.ok:
                 for line in resp.text.splitlines():
                     proxy = line.strip()
-                    # Uniquement format IP:PORT, pas de login/pass, pas de proxies onion
+                    # Format IP:PORT uniquement, pas d'onion ni de localhost
                     if proxy and ':' in proxy and not proxy.startswith('127.') and not proxy.startswith('localhost'):
                         proxies.add(proxy)
         except Exception:
@@ -40,10 +43,11 @@ def fetch_proxies() -> set:
 def is_proxy_working(proxy: str, timeout=7) -> bool:
     proxies = {"http": f"http://{proxy}", "https": f"http://{proxy}"}
     try:
-        # Test HTTPS, anti-bot, en-tête User-Agent mobile
-        headers = {"User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G973F) AppleWebKit/537.36 Chrome/114.0.0.0 Mobile Safari/537.36"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G973F) AppleWebKit/537.36 Chrome/114.0.0.0 Mobile Safari/537.36"
+        }
         resp = requests.get("https://www.instagram.com/", proxies=proxies, headers=headers, timeout=timeout)
-        # Doit contenir 'instagram' dans le html (anti page de blocage)
+        # On veut une page login Instagram, pas une page d'erreur/protection
         if resp.ok and "instagram" in resp.text.lower() and "login" in resp.text.lower():
             ip_resp = requests.get("https://api.ipify.org/", proxies=proxies, timeout=timeout)
             if ip_resp.ok and len(ip_resp.text.strip()) >= 7:
@@ -57,6 +61,7 @@ def refresh_and_validate_proxies():
     print("🔎 [PROXY] Recherche et validation stricte en cours...")
     proxies = fetch_proxies()
     print(f"🕵️ {len(proxies)} proxies récupérés. Vérification stricte...")
+    # Load blacklist
     try:
         with open(PROXY_BLACKLIST_PATH, "r") as f:
             proxy_blacklist = set(json.load(f))
@@ -115,46 +120,56 @@ def start_proxy_refresher():
     t = threading.Thread(target=refresher, daemon=True)
     t.start()
 
+def load_user_proxy_allocation():
+    global user_proxy_allocation
+    try:
+        with open(PROXY_SESSION_PATH, "r") as f:
+            user_proxy_allocation = json.load(f)
+    except Exception:
+        user_proxy_allocation = {}
+
+def save_user_proxy_allocation():
+    with open(PROXY_SESSION_PATH, "w") as f:
+        json.dump(user_proxy_allocation, f, indent=2)
+
 def choisir_proxy_rotation(username=None, avoid_in_use=True):
+    load_user_proxy_allocation()
     proxies = get_valid_proxies()
     if not proxies:
         return None
-    # On évite ceux en usage ou blacklistés
+    # Si le user a déjà un proxy attribué pour cette session, on le garde
+    if username and username in user_proxy_allocation:
+        proxy = user_proxy_allocation[username]
+        if proxy in proxies and proxy not in proxy_blacklist:
+            return proxy
+    # Sinon, on choisit un proxy non utilisé
     candidates = [p for p in proxies if proxy_usage[p] == 0 and p not in proxy_blacklist]
     if not candidates or not avoid_in_use:
         candidates = [p for p in proxies if p not in proxy_blacklist]
     if not candidates:
         return random.choice(proxies)
-    # Privilégier ceux utilisés il y a longtemps (moins de détection)
+    # Privilégie ceux utilisés il y a longtemps
     candidates.sort(key=lambda p: proxy_last_used.get(p, 0))
-    chosen = random.choice(candidates[:max(1, len(candidates)//5)])  # boost random sur le top 20% les moins utilisés récemment
+    chosen = random.choice(candidates[:max(1, len(candidates)//5)])
     proxy_usage[chosen] += 1
     proxy_last_used[chosen] = time.time()
     if username:
-        # Sauvegarder l'attribution dans un fichier pour relancer même après crash
-        try:
-            with open(PROXY_SESSION_PATH, "r") as f:
-                session_map = json.load(f)
-        except Exception:
-            session_map = {}
-        session_map[username] = chosen
-        with open(PROXY_SESSION_PATH, "w") as f:
-            json.dump(session_map, f)
+        user_proxy_allocation[username] = chosen
+        save_user_proxy_allocation()
     return chosen
 
 def release_proxy(proxy, username=None):
-    # À appeler quand un utilisateur termine la session pour libérer le proxy
     proxy_usage[proxy] = max(0, proxy_usage[proxy] - 1)
     if username:
-        try:
-            with open(PROXY_SESSION_PATH, "r") as f:
-                session_map = json.load(f)
-        except Exception:
-            session_map = {}
-        if username in session_map and session_map[username] == proxy:
-            del session_map[username]
-            with open(PROXY_SESSION_PATH, "w") as f:
-                json.dump(session_map, f)
+        load_user_proxy_allocation()
+        if username in user_proxy_allocation and user_proxy_allocation[username] == proxy:
+            del user_proxy_allocation[username]
+            save_user_proxy_allocation()
+
+def blacklist_proxy(proxy):
+    proxy_blacklist.add(proxy)
+    with open(PROXY_BLACKLIST_PATH, "w") as f:
+        json.dump(list(proxy_blacklist), f, indent=2)
 
 def setup_instagrapi_client(username, password, session_data=None, proxy=None):
     from instagrapi import Client
@@ -180,7 +195,8 @@ def choisir_utilisateur_random_avec_session3(exclude_last=None):
                 line = line.strip()
                 if line and ':' in line:
                     username, _ = line.split(':', 1)
-                    if username not in blacklist and os.path.exists(f"{username}_session3/{username}_ig_session.json"):
+                    if username not in blacklist and \
+                        (os.path.exists(f"{username}_session3/{username}_ig_session.json") or os.path.exists(f"{username}.json")):
                         utilisateurs.append(username)
     except Exception:
         pass
@@ -190,3 +206,6 @@ def choisir_utilisateur_random_avec_session3(exclude_last=None):
     if not utilisateurs:
         return None
     return random.choice(utilisateurs)
+
+# ----------- LANCEMENT DU REFRESHER EN ARRIÈRE-PLAN -----------
+start_proxy_refresher()
