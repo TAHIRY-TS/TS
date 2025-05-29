@@ -17,9 +17,9 @@ from telethon import events
 from proxy_manager import (
     setup_instagrapi_client,
     choisir_proxy_rotation,
-    refresh_and_validate_proxies,
-    start_proxy_refresher,
-    get_valid_proxies,
+    choisir_utilisateur_random_avec_session3,
+    release_proxy,
+    blacklist_proxy,
 )
 
 # ----------- PATHS & UTILS -----------
@@ -91,70 +91,9 @@ def sync_all_session3():
         else:
             print(color(f"[WARNING] Fichier source JSON absent pour {username}, pas de session3.", "1;33"))
 
-def charger_client_depuis_session3(username):
-    session_file = session3_file(username)
-    if not os.path.exists(session_file):
-        return None
-    password = get_password(username)
-    if not password:
-        return None
-    with open(session_file, "r") as f:
-        session_data = json.load(f)
-    proxy = choisir_proxy_rotation()
-    try:
-        cl = setup_instagrapi_client(username, password, session_data=session_data, proxy=proxy)
-        return cl
-    except Exception as e:
-        print(horloge_prefix() + color(f"Erreur lors de l'initialisation du client IG ({username}): {e}", "1;31"))
-        ajouter_a_blacklist(username, str(e))
-        return None
-
-def choisir_utilisateur_random_avec_session3():
-    utilisateurs = get_utilisateurs()
-    blacklist = [x['username'] for x in charger_blacklist()]
-    candidats = [u for u, _ in utilisateurs if session3_exists(u) and u not in blacklist]
-    if not candidats:
-        print(horloge(), color("⛔ Aucun compte valide avec session3 !", "1;31"))
-        return None
-    username = random.choice(candidats)
-    print(horloge(), color(f"🚹 User sélectionné (random utilisateur.session): {username}", "1;32"))
-    return username
-
-def tentative_rattrapage_session(username):
-    password = get_password(username)
-    session_file = session3_file(username)
-    cl = charger_client_depuis_session3(username)
-    if not cl:
-        return False
-    try:
-        cl.get_timeline_feed()
-        return True
-    except Exception as e:
-        print(horloge_prefix() + color("[IG] Session expirée, tentative de reconnexion...", "1;33"))
-        try:
-            proxy = choisir_proxy_rotation()
-            cl.login(username, password)
-            cl.set_proxy(proxy)
-            cl.dump_settings(session_file)
-            with open(SESSION_JOURNAL, "a") as f:
-                f.write(f"{datetime.now().isoformat()} {username}: RESTORED SESSION\n")
-            print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
-            return True
-        except Exception as e2:
-            print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
-            ajouter_a_blacklist(username, f"Login/Challenge/Checkpoint IG: {e2}")
-            with open(SESSION_JOURNAL, "a") as f:
-                f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2}\n")
-            return False
-
-def connexion_instagram_depuis_session3(username):
-    session_file = session3_file(username)
-    if not os.path.exists(session_file): return None, None
-    proxy = choisir_proxy_rotation()
-    cl = charger_client_depuis_session3(username)
-    if proxy and cl:
-        cl.set_proxy(proxy)
-    return cl, username
+def sauvegarder_task(lien, action, username):
+    with open(TASK_DATA_PATH, "a") as f:
+        f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
 
 def extraire_infos(msg):
     lien_match = re.search(r'https?://(www\.)?instagram.com/[^\s]+', msg)
@@ -184,66 +123,70 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
 
-async def effectuer_action(
-    cl, action, id_cible, comment_text=None, username=None, tries=0
-):
-    MAX_TRIES = 2
-    try:
-        # Humanisation : délais variables
-        await asyncio.sleep(random.uniform(1.5, 3.8))
-        if action == "follow":
-            cl.user_follow(id_cible)
-        elif action == "like":
-            cl.media_like(id_cible)
-        elif action == "comment":
-            if not comment_text:
-                print(horloge_prefix() + color("[Erreur] Texte du commentaire manquant", "1;33"))
-                return False
-            cl.media_comment(id_cible, comment_text)
-        elif action == "story view":
-            cl.story_seen([id_cible])
-            await asyncio.sleep(random.uniform(2.5, 6.0))
-        elif action == "video view":
-            cl.media_like(id_cible)
-            await asyncio.sleep(random.uniform(2.5, 6.0))
-        await asyncio.sleep(random.uniform(4, 12))
-        return True
-    except Exception as e:
-        err_str = str(e).lower()
-        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < MAX_TRIES:
-            print(horloge_prefix() + color("[IG] Session expirée/corrompue, suppression et tentative de reconnexion...", "1;33"))
-            session_path = session3_file(username)
-            if os.path.exists(session_path):
-                os.remove(session_path)
-            try:
-                proxy = choisir_proxy_rotation()
-                cl2 = setup_instagrapi_client(username, get_password(username), proxy=proxy)
-                cl2.dump_settings(session_path)
-                print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
-                return await effectuer_action(cl2, action, id_cible, comment_text, username, tries=tries+1)
-            except Exception as e2:
-                print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
-                ajouter_a_blacklist(username, f"Impossible login après reset session: {e2}")
-                with open(SESSION_JOURNAL, "a") as f:
-                    f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2} (login)\n")
-                return False
-        else:
-            print(horloge_prefix() + color(f"[Erreur action IG] {e}", "1;31"))
-            ajouter_a_blacklist(username, f"Erreur IG: {e}")
-            with open(SESSION_JOURNAL, "a") as f:
-                f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e} (action)\n")
-            return False
+# ----------- PROXY & SESSION MANAGEMENT -----------
 
-def sauvegarder_task(lien, action, username):
-    with open(TASK_DATA_PATH, "a") as f:
-        f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
+user_proxy_map = {}  # clé=username, val=proxy
+
+def get_user_proxy(username):
+    if username not in user_proxy_map:
+        proxy = choisir_proxy_rotation(username=username)
+        if proxy:
+            user_proxy_map[username] = proxy
+    return user_proxy_map.get(username, None)
+
+def charger_client_depuis_session3(username):
+    session_file = session3_file(username)
+    if not os.path.exists(session_file):
+        return None
+    password = get_password(username)
+    if not password:
+        return None
+    with open(session_file, "r") as f:
+        session_data = json.load(f)
+    proxy = get_user_proxy(username)
+    try:
+        cl = setup_instagrapi_client(username, password, session_data=session_data, proxy=proxy)
+        return cl
+    except Exception as e:
+        print(horloge_prefix() + color(f"Erreur lors de l'initialisation du client IG ({username}): {e}", "1;31"))
+        ajouter_a_blacklist(username, str(e))
+        if proxy:
+            blacklist_proxy(proxy)
+            release_proxy(proxy, username)
+        return None
+
+def tentative_rattrapage_session(username):
+    password = get_password(username)
+    session_file = session3_file(username)
+    proxy = get_user_proxy(username)
+    try:
+        cl = setup_instagrapi_client(username, password, proxy=proxy)
+        cl.dump_settings(session_file)
+        with open(SESSION_JOURNAL, "a") as f:
+            f.write(f"{datetime.now().isoformat()} {username}: RESTORED SESSION\n")
+        print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
+        return True
+    except Exception as e2:
+        print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
+        ajouter_a_blacklist(username, f"Impossible login après reset session: {e2}")
+        with open(SESSION_JOURNAL, "a") as f:
+            f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2}\n")
+        if proxy:
+            blacklist_proxy(proxy)
+            release_proxy(proxy, username)
+        return False
+
+def connexion_instagram_depuis_session3(username):
+    session_file = session3_file(username)
+    if not os.path.exists(session_file): return None, None, None
+    proxy = get_user_proxy(username)
+    cl = charger_client_depuis_session3(username)
+    if cl and proxy:
+        cl.set_proxy(proxy)
+    return cl, username, proxy
 
 # ----------- SYNCHRONISATION SESSION3 AU DEMARRAGE -----------
-
 sync_all_session3()
-
-# ----------- PROXY REFRESHER LANCEMENT (illimité) ----------
-start_proxy_refresher()
 
 # ----------- TELEGRAM -----------
 
@@ -275,10 +218,11 @@ client = TelegramClient(StringSession(session_str), api_id, api_hash)
 
 current_user = None
 pending_comment = None
+last_user = None
 
 @client.on(events.NewMessage(from_users="SmmKingdomTasksBot"))
 async def handler(event):
-    global current_user, pending_comment
+    global current_user, pending_comment, last_user
     msg_raw = event.raw_text
     msg = msg_raw.lower()
     try:
@@ -288,7 +232,8 @@ async def handler(event):
             action = pending_comment["action"]
             media_pk = pending_comment["media_pk"]
             username = pending_comment["username"]
-            result = await effectuer_action(cl, action, media_pk, comment_text=comment_text, username=username)
+            proxy = pending_comment["proxy"]
+            result = await effectuer_action(cl, action, media_pk, comment_text=comment_text, username=username, proxy=proxy)
             if result:
                 print(horloge_prefix() + color("[✅] Commentaire posté avec succès", "1;32"))
                 await event.respond("✅Completed")
@@ -302,9 +247,10 @@ async def handler(event):
 
         if ("▪️ please give us your profile's username for tasks completing :" in msg or
             "⭕️ please choose account from the list" in msg):
-            current_user = choisir_utilisateur_random_avec_session3()
+            current_user = choisir_utilisateur_random_avec_session3(exclude_last=last_user)
             if current_user is None:
                 return
+            last_user = current_user
             print(horloge_prefix() + color(f"[🔍] Recherche de tache pour: {current_user}", "1;36"))
             await asyncio.sleep(random.uniform(2, 4))
             await client.send_message("SmmKingdomTasksBot", current_user)
@@ -319,6 +265,9 @@ async def handler(event):
         if "no active tasks" in msg:
             if current_user:
                 print(horloge_prefix() + color(f"[⛔] Aucune tâche sur {current_user}", "1;33"))
+                proxy = get_user_proxy(current_user)
+                if proxy:
+                    release_proxy(proxy, current_user)
                 await asyncio.sleep(random.uniform(2, 4))
                 await client.send_message("SmmKingdomTasksBot", "Instagram")
             else:
@@ -337,24 +286,34 @@ async def handler(event):
 
             if not session3_exists(username):
                 print(horloge_prefix() + color(f"[⚠️] Pas de session3 valide pour {username}, tâche ignorée.", "1;31"))
+                proxy = get_user_proxy(username)
+                if proxy:
+                    release_proxy(proxy, username)
                 await event.respond("❌Error")
                 await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
                 return
 
             if not tentative_rattrapage_session(username):
                 print(horloge_prefix() + color("[⚠️] Compte blacklisté ou non restaurable, skip tâche.", "1;31"))
+                proxy = get_user_proxy(username)
+                if proxy:
+                    release_proxy(proxy, username)
                 await event.respond("❌Error")
                 await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
                 return
 
-            cl, _ = connexion_instagram_depuis_session3(username)
+            cl, _, proxy = connexion_instagram_depuis_session3(username)
             if not cl or not username:
                 print(horloge_prefix() + color("[⚠️] Connexion Instagram échouée", "1;31"))
+                if proxy:
+                    release_proxy(proxy, username)
                 await event.respond("❌Error")
                 return
             id_cible = extraire_id_depuis_lien(cl, lien, action)
             if not id_cible:
                 print(horloge_prefix() + color("⛔ ID cible introuvable.", "1;31"))
+                if proxy:
+                    release_proxy(proxy, username)
                 await event.respond("❌Error")
                 return
             sauvegarder_task(lien, action, username)
@@ -363,10 +322,10 @@ async def handler(event):
             print(horloge_prefix() + color(f"[🧾] ID Cible : {id_cible}", "1;37"))
             print(horloge_prefix() + color(f"[👤] Utilisateur : {username}", "1;35"))
             if action == "comment":
-                pending_comment = {"media_pk": id_cible, "cl": cl, "action": action, "username": username}
+                pending_comment = {"media_pk": id_cible, "cl": cl, "action": action, "username": username, "proxy": proxy}
                 print(horloge_prefix() + color("[📝] Veuillez attendre le message contenant le texte du commentaire...", "1;33"))
                 return
-            result = await effectuer_action(cl, action, id_cible, username=username)
+            result = await effectuer_action(cl, action, id_cible, username=username, proxy=proxy)
             if result:
                 print(horloge_prefix() + color("[✅] Tâche réussie", "1;32"))
                 await asyncio.sleep(random.uniform(5, 10))
@@ -391,6 +350,62 @@ async def handler(event):
         print(horloge_prefix() + color(f"[⛔] Erreur de traitement : {e}", "1;31"))
         await asyncio.sleep(5)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
+
+async def effectuer_action(
+    cl, action, id_cible, comment_text=None, username=None, tries=0, proxy=None
+):
+    MAX_TRIES = 2
+    try:
+        await asyncio.sleep(random.uniform(1.5, 3.8))
+        if action == "follow":
+            cl.user_follow(id_cible)
+        elif action == "like":
+            cl.media_like(id_cible)
+        elif action == "comment":
+            if not comment_text:
+                print(horloge_prefix() + color("[Erreur] Texte du commentaire manquant", "1;33"))
+                return False
+            cl.media_comment(id_cible, comment_text)
+        elif action == "story view":
+            cl.story_seen([id_cible])
+            await asyncio.sleep(random.uniform(2.5, 6.0))
+        elif action == "video view":
+            cl.media_like(id_cible)
+            await asyncio.sleep(random.uniform(2.5, 6.0))
+        await asyncio.sleep(random.uniform(4, 12))
+        if proxy:
+            release_proxy(proxy, username)
+        return True
+    except Exception as e:
+        err_str = str(e).lower()
+        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < MAX_TRIES:
+            print(horloge_prefix() + color("[IG] Session expirée/corrompue, suppression et tentative de reconnexion...", "1;33"))
+            session_path = session3_file(username)
+            if os.path.exists(session_path):
+                os.remove(session_path)
+            try:
+                cl2 = setup_instagrapi_client(username, get_password(username), proxy=proxy)
+                cl2.dump_settings(session_path)
+                print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
+                return await effectuer_action(cl2, action, id_cible, comment_text, username, tries=tries+1, proxy=proxy)
+            except Exception as e2:
+                print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
+                ajouter_a_blacklist(username, f"Impossible login après reset session: {e2}")
+                with open(SESSION_JOURNAL, "a") as f:
+                    f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2} (login)\n")
+                if proxy:
+                    blacklist_proxy(proxy)
+                    release_proxy(proxy, username)
+                return False
+        else:
+            print(horloge_prefix() + color(f"[Erreur action IG] {e}", "1;31"))
+            ajouter_a_blacklist(username, f"Erreur IG: {e}")
+            with open(SESSION_JOURNAL, "a") as f:
+                f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e} (action)\n")
+            if proxy:
+                blacklist_proxy(proxy)
+                release_proxy(proxy, username)
+            return False
 
 if __name__ == "__main__":
     os.system('clear')
