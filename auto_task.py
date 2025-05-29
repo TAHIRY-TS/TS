@@ -71,6 +71,19 @@ def get_password(username):
             return pwd
     return None
 
+def sync_all_session3():
+    utilisateurs = get_utilisateurs()
+    for username, _ in utilisateurs:
+        src = source_json_file(username)
+        dst_dir = session3_dir(username)
+        dst = session3_file(username)
+        if os.path.exists(src):
+            os.makedirs(dst_dir, exist_ok=True)
+            shutil.copy2(src, dst)
+            os.chmod(dst, 0o600)
+        else:
+            print(color(f"[WARNING] Fichier source JSON absent pour {username}, pas de session3.", "1;33"))
+
 def charger_client_depuis_session3(username):
     session_file = session3_file(username)
     if not os.path.exists(session_file):
@@ -221,22 +234,7 @@ def sauvegarder_task(lien, action, username):
         f.write(f"{datetime.now().isoformat()} | {username} | {action} | {lien}\n")
 
 # ----------- SYNCHRONISATION SESSION3 AU DEMARRAGE -----------
-
-def sync_all_session3():
-    utilisateurs = get_utilisateurs()
-    for username, _ in utilisateurs:
-        src = source_json_file(username)
-        dst_dir = session3_dir(username)
-        dst = session3_file(username)
-        if os.path.exists(src):
-            if not os.path.exists(dst_dir):
-                os.makedirs(dst_dir, exist_ok=True)
-            # Toujours copier : même si déjà présent, on veut la dernière version du .json
-            shutil.copy2(src, dst)
-            # Permissions restrictives
-            os.chmod(dst, 0o600)
-        else:
-            print(color(f"[WARNING] Fichier source JSON absent pour {username}, pas de session3.", "1;33"))
+sync_all_session3()
 
 # ----------- TELEGRAM -----------
 
@@ -387,9 +385,6 @@ async def handler(event):
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
 if __name__ == "__main__":
-    # ------ Synchronise toutes les sessions3 à partir des fichiers source .json ------
-    sync_all_session3()
-
     os.system('clear')
     print(color("🤖 Bienvenue sur TS Thermux 🤖", "1;36").center(os.get_terminal_size().columns))
     try:
