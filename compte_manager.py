@@ -24,6 +24,10 @@ os.makedirs(SESSION_DIR, exist_ok=True)
 open(LOG_FILE, 'a').close()
 os.chmod(LOG_FILE, 0o600)
 
+dpi = "410dpi"
+resolution = "1080x1920"
+version_name = "269.0.0.18.75"
+version_code = "314665256"
 
 if not os.path.exists(UTILISATEUR_PATH):
     with open(UTILISATEUR_PATH, "w") as f:
@@ -121,8 +125,6 @@ def get_wm_info(field):
         output = subprocess.check_output(['wm', field]).decode().strip()
         return output.split(": ")[1]
     except Exception:
-        dpi = "410dpi"
-        resolution = "1080x1920"
         return None
     
 
@@ -138,8 +140,7 @@ def get_app_info(package_name):
                 version_code = line.split('=')[1].split(' ')[0].strip()
         return version_name, version_code
     except Exception:
-        version_name = "269.0.0.18.75"
-        version_code = "314665256"
+        
         return None, None
 
 # ----------- SESSION FORMAT STRICT -----------
