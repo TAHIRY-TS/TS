@@ -15,7 +15,7 @@ PROXY_LIST_SOURCES = [
 PROXY_VALID_PATH = "proxies_valides.json"
 PROXY_BLACKLIST_PATH = "proxies_blacklist.json"
 PROXY_SESSION_PATH = "proxies_alloc.json"
-PROXY_REFRESH_INTERVAL = 20 * 60  # 20 minutes
+PROXY_REFRESH_INTERVAL = 15 * 55 # 20 minutes
 
 # Gestion de l'utilisation des proxies et blacklist
 proxy_usage = defaultdict(int)      # proxy => nombre d'utilisateurs simultanés
