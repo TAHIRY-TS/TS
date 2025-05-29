@@ -119,7 +119,7 @@ def get_wm_info(field):
         output = subprocess.check_output(['wm', field]).decode().strip()
         return output.split(": ")[1]
     except Exception:
-        dpi = "410",
+        dpi = "410dpi",
         resolution = "1080x1920"
         return None
 
@@ -141,16 +141,16 @@ def get_app_info(package_name):
 
 def generate_device_settings(package_name='com.instagram.android'):
     return {
-        "app_version": get_app_info(package_name)[0],
+        "app_version": get_app_info(package_name)[0] or version_name,
         "android_version": getprop("ro.build.version.sdk"),
         "android_release": getprop("ro.build.version.release"),
-        "dpi": get_wm_info("density"),
-        "resolution": get_wm_info("size"),
+        "dpi": get_wm_info("density") or dpi,
+        "resolution": get_wm_info("size") or resolution,
         "manufacturer": getprop("ro.product.manufacturer"),
         "device": getprop("ro.product.device"),
         "model": getprop("ro.product.model"),
         "cpu": getprop("ro.board.platform"),
-        "version_code": get_app_info(package_name)[1]
+        "version_code": get_app_info(package_name)[1] or version_code
     }
 
 def generate_uuids():
