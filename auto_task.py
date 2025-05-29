@@ -172,7 +172,10 @@ def extraire_id_depuis_lien(cl, lien, action):
         print(horloge(), color(f"Erreur extraction ID : {str(e)}", "1;31"))
         return None
 
-async def effectuer_action(cl, action, id_cible, comment_text=None, username=None):
+async def effectuer_action(
+    cl, action, id_cible, comment_text=None, username=None, tries=0
+):
+    MAX_TRIES = 2
     try:
         if action == "follow":
             cl.user_follow(id_cible)
@@ -189,52 +192,32 @@ async def effectuer_action(cl, action, id_cible, comment_text=None, username=Non
         elif action == "video view":
             cl.media_like(id_cible)
             await asyncio.sleep(3)
-        await asyncio.sleep(random.randint(4, 10))  # Pause pour simuler un humain
+        await asyncio.sleep(random.randint(4, 10))
         return True
     except Exception as e:
         err_str = str(e).lower()
-        if "login required" in err_str or "challenge" in err_str or "checkpoint" in err_str:
-            print(horloge_prefix() + color("[IG] Session expirée, tentative de reconnexion...", "1;33"))
-            password = get_password(username)
-            session_file = session3_file(username)
-            cl2 = charger_client_depuis_session3(username)
+        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < MAX_TRIES:
+            print(horloge_prefix() + color("[IG] Session expirée/corrompue, suppression et tentative de reconnexion...", "1;33"))
+            session_path = session3_file(username)
+            if os.path.exists(session_path):
+                os.remove(session_path)
             try:
-                cl2.login(username, password)
-                cl2.dump_settings(session_file)
-                with open(SESSION_JOURNAL, "a") as f:
-                    f.write(f"{datetime.now().isoformat()} {username}: RESTORED SESSION (effectuer_action)\n")
+                cl2 = setup_instagrapi_client(username, get_password(username))
+                cl2.dump_settings(session_path)
                 print(horloge_prefix() + color("[IG] Session restaurée avec succès.", "1;32"))
-                try:
-                    if action == "follow":
-                        cl2.user_follow(id_cible)
-                    elif action == "like":
-                        cl2.media_like(id_cible)
-                    elif action == "comment":
-                        if not comment_text:
-                            return False
-                        cl2.media_comment(id_cible, comment_text)
-                    elif action == "story view":
-                        cl2.story_seen([id_cible])
-                        await asyncio.sleep(3)
-                    elif action == "video view":
-                        cl2.media_like(id_cible)
-                        await asyncio.sleep(3)
-                    await asyncio.sleep(random.randint(4, 10))
-                    return True
-                except Exception as e2:
-                    print(horloge_prefix() + color("[IG] Echec après restauration: " + str(e2), "1;31"))
-                    ajouter_a_blacklist(username, f"Action après restaure: {e2}")
-                    with open(SESSION_JOURNAL, "a") as f:
-                        f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2} (effectuer_action)\n")
-                    return False
+                return await effectuer_action(cl2, action, id_cible, comment_text, username, tries=tries+1)
             except Exception as e2:
                 print(horloge_prefix() + color("[IG] Impossible de restaurer la session. Compte blacklisté.", "1;31"))
-                ajouter_a_blacklist(username, f"Login/Challenge/Checkpoint IG: {e2}")
+                ajouter_a_blacklist(username, f"Impossible login après reset session: {e2}")
                 with open(SESSION_JOURNAL, "a") as f:
-                    f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2} (effectuer_action login)\n")
+                    f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e2} (login)\n")
                 return False
-        print(horloge_prefix() + color(f"[Erreur action IG] {e}", "1;31"))
-        return False
+        else:
+            print(horloge_prefix() + color(f"[Erreur action IG] {e}", "1;31"))
+            ajouter_a_blacklist(username, f"Erreur IG: {e}")
+            with open(SESSION_JOURNAL, "a") as f:
+                f.write(f"{datetime.now().isoformat()} {username}: BLACKLIST {e} (action)\n")
+            return False
 
 def sauvegarder_task(lien, action, username):
     with open(TASK_DATA_PATH, "a") as f:
