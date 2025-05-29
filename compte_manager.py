@@ -7,7 +7,10 @@ import uuid
 import subprocess
 import time
 import shutil
+import random
 from datetime import datetime
+
+from proxy_manager import setup_instagrapi_client, get_proxy_for_user
 
 # ----------- CONFIG PATHS -----------
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,9 +58,9 @@ def clear():
 def horloge():
     return datetime.now().strftime("[TS %H:%M:%S]")
 
-def log_action(action, username):
+def log_action(action, username, proxy=None):
     with open(LOG_FILE, 'a') as log:
-        log.write(f"{horloge()} {action.upper()} - {username}\n")
+        log.write(f"{horloge()} {action.upper()} - {username} - Proxy:{proxy}\n")
 
 def success(msg):
     print(color(f"{horloge()} [SUCCÈS] {msg}", "1;32"))
@@ -74,7 +77,6 @@ def safe_input(prompt):
     except EOFError:
         return ''
 
-# ----------- UTILISATEUR.SESSION (username:password) -----------
 def charger_utilisateurs(path=UTILISATEUR_SESSION):
     utilisateurs = []
     if os.path.exists(path):
@@ -119,9 +121,6 @@ def session3_file(username):
     return os.path.join(session3_dir(username), f"{username}_ig_session.json")
 
 def ensure_session3(username):
-    """
-    Synchronise le fichier {username}.json dans {username}_session3/{username}_ig_session.json
-    """
     src = os.path.join(CONFIG_DIR, f"{username}.json")
     dst_dir = session3_dir(username)
     dst_file = session3_file(username)
@@ -131,9 +130,6 @@ def ensure_session3(username):
         os.chmod(dst_file, 0o600)
 
 def ensure_all_session3():
-    """
-    Synchronise tous les comptes utilisateur.session actifs dans leur dossier session3
-    """
     for username, _ in charger_utilisateurs(UTILISATEUR_SESSION):
         ensure_session3(username)
 
@@ -155,7 +151,6 @@ def restore_blacklist_user(username, new_password=None):
             enregistrer_utilisateur(u, password, UTILISATEUR_SESSION)
             supprimer_utilisateur(u, BLACKLIST_SESSION)
             success(f"Compte {username} restauré depuis blacklist.session")
-            # Synchronise immédiatement le session3
             ensure_session3(u)
             return
     erreur(f"Compte {username} introuvable dans blacklist.session.")
@@ -218,7 +213,6 @@ def creer_fichier_utilisateur(username, password, sessionid=None, ds_user_id=Non
     with open(filepath, "w") as f:
         json.dump(data, f, indent=4)
     os.chmod(filepath, 0o600)
-    # Créer automatiquement le dossier session3 et la session IG
     ensure_session3(username)
     return True
 
@@ -230,6 +224,27 @@ def auto_repair_all_sources():
         success(f"Source session pour {username} régénérée.")
     print(color("Tous les fichiers sources ont été (re)générés et synchronisés avec utilisateur.session.", "1;32"))
     time.sleep(2)
+
+# ----------- ANTI-BLOCKAGE ET PROXY INSTAGRAM -----------
+
+def sleep_human(min_sec=10, max_sec=30):
+    attente = random.randint(min_sec, max_sec)
+    info(f"Pause de {attente} secondes pour simuler un comportement humain et limiter le blocage Instagram...")
+    time.sleep(attente)
+
+def test_connexion_utilisateur(username, password):
+    proxy = get_proxy_for_user(username)
+    try:
+        cl = setup_instagrapi_client(username, password)
+        cl.get_timeline_feed()
+        success(f"Connexion réussie pour {username} (proxy: {proxy if proxy else 'AUCUN'})")
+        log_action("SUCCES", username, proxy)
+        return cl
+    except Exception as e:
+        erreur(f"Connexion échouée pour {username} (proxy: {proxy if proxy else 'AUCUN'}) : {e}")
+        log_action("ECHEC", username, proxy)
+        blacklist_user(username)
+        return None
 
 # ----------- MENUS -----------
 
@@ -320,7 +335,6 @@ def supprimer_compte():
         filepath = os.path.join(CONFIG_DIR, f"{username}.json")
         if os.path.exists(filepath):
             os.remove(filepath)
-        # Supprime le dossier session3 lié
         session3_path = session3_dir(username)
         if os.path.exists(session3_path):
             shutil.rmtree(session3_path)
@@ -349,7 +363,6 @@ def blacklist_menu():
         return blacklist_menu()
     for username in usernames:
         blacklist_user(username)
-        # Supprime le dossier session3 lié
         session3_path = session3_dir(username)
         if os.path.exists(session3_path):
             shutil.rmtree(session3_path)
@@ -402,7 +415,6 @@ def supprimer_blacklist_menu():
         return supprimer_blacklist_menu()
     for username in usernames:
         supprimer_blacklist_user(username)
-        # Supprime le dossier session3 lié
         session3_path = session3_dir(username)
         if os.path.exists(session3_path):
             shutil.rmtree(session3_path)
@@ -410,7 +422,6 @@ def supprimer_blacklist_menu():
     safe_input("Appuyez sur Entrée...")
 
 def menu():
-    # Synchronisation automatique de tous les session3 au démarrage
     ensure_all_session3()
     while True:
         clear()
@@ -423,6 +434,7 @@ def menu():
         print(color("6", "1;33") + ". 🗃️ Lister la blacklist")
         print(color("7", "1;33") + ". 🔄 Restaurer un compte blacklisté")
         print(color("8", "1;33") + ". ❌ Supprimer définitivement un compte blacklisté")
+        print(color("9", "1;33") + ". 🔎 Tester la connexion de tous les comptes (avec proxy)")
         print(color("0", "1;33") + ". 🔙 Quitter")
         choix = safe_input("\nChoix: ")
         if choix == '1':
@@ -445,6 +457,12 @@ def menu():
             restore_blacklist_menu()
         elif choix == '8':
             supprimer_blacklist_menu()
+        elif choix == '9':
+            utilisateurs = charger_utilisateurs()
+            for username, password in utilisateurs:
+                test_connexion_utilisateur(username, password)
+                sleep_human(15, 45)
+            safe_input("Appuyez sur Entrée...")
         elif choix == '0':
             for i in range(3, 0, -1):
                 print(color(f"Retour à l'accueil dans {i} secondes ...", "1;36"), end='\r')
