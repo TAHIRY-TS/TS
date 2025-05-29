@@ -350,10 +350,10 @@ async def handler(event):
             result = await effectuer_action(cl, action, id_cible, username=username)
             if result:
                 print(horloge_prefix() + color("[✅] Tâche réussie", "1;32"))
+                await asyncio.sleep(random.randint(5, 10))
                 await event.respond("✅Completed")
             else:
                 print(horloge_prefix() + color("[❌] Tâche échouée", "1;31"))
-                await event.respond("❌Error")
             await asyncio.sleep(random.randint(5, 10))
             await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
             return
@@ -370,7 +370,6 @@ async def handler(event):
         with open(ERROR_LOG, "a") as f:
             f.write(f"{horloge()} [Handler Error] {e}\n")
         print(horloge_prefix() + color(f"[⛔] Erreur de traitement : {e}", "1;31"))
-        await event.respond("⚠️ Erreur, skip")
         await asyncio.sleep(5)
         await client.send_message("SmmKingdomTasksBot", "📝Tasks📝")
 
