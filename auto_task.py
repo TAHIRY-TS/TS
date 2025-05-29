@@ -22,8 +22,6 @@ from proxy_manager import (
     blacklist_proxy,
 )
 
-# ----------- PATHS & UTILS -----------
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = BASE_DIR
 UTILISATEUR_SESSION = os.path.join(CONFIG_DIR, "utilisateur.session")
@@ -125,7 +123,7 @@ def extraire_id_depuis_lien(cl, lien, action):
 
 # ----------- PROXY & SESSION MANAGEMENT -----------
 
-user_proxy_map = {}  # clé=username, val=proxy
+user_proxy_map = {}
 
 def get_user_proxy(username):
     if username not in user_proxy_map:
@@ -185,7 +183,6 @@ def connexion_instagram_depuis_session3(username):
         cl.set_proxy(proxy)
     return cl, username, proxy
 
-# ----------- SYNCHRONISATION SESSION3 AU DEMARRAGE -----------
 sync_all_session3()
 
 # ----------- TELEGRAM -----------
@@ -378,7 +375,7 @@ async def effectuer_action(
         return True
     except Exception as e:
         err_str = str(e).lower()
-        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < MAX_TRIES:
+        if ("login required" in err_str or "challenge" in err_str or "checkpoint" in err_str) and tries < 2:
             print(horloge_prefix() + color("[IG] Session expirée/corrompue, suppression et tentative de reconnexion...", "1;33"))
             session_path = session3_file(username)
             if os.path.exists(session_path):
